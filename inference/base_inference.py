@@ -100,7 +100,7 @@ class inferer:
                 ar, rar = total_accepts / i, rolling_accepts / check_every
 
                 # drive acceptance rate towards 0.234, as per Roberts, G.O., Gelman, A., Gilks, W.R. (1997). Weak Convergence and Optimal Scalingof Random Walk Metropolis Algorithms.Ann. Appl. Probab.7, 110-20. Though note there's been some debate since e.g.  http://probability.ca/jeff/ftpdir/mylene2.pdf
-                step_factor += (ar - 0.234)
+                step_factor *= (ar / 0.234) # Updated to adjust step sizing and to stop any issues with negatives in stdev calc
                 step = step_factor * np.array(params_out)[:i, ].std(0) / 3
 
                 if use_tqdm:
