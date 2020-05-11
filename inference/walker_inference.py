@@ -203,16 +203,20 @@ class BiasedPersistentInferer(inferer):
 
         # The probability of observing the first step, given the angle beta0 towards the source
         # Updated to address issues with log(0), if the b or p parameter = 0, the distribution can be assumed to be Uniform.
+
         if b > 0:
             p_0 = WrappedNormal(mu=self.beta0, sig=sig_b).pdf(x=self.alpha0)
+            p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
+        ## Need to double check that this working
         else:
-            p_0 = WrappedNormal(mu=self.beta0, sig=1e6).pdf(x=self.alpha0) # larger stdev approximates the uniform distribution 
-
-        # biased probabilities
-        p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
+            p_0 = np.random.uniform((-1*np.pi),np.pi)
+            p_b = np.random.uniform((-1*np.pi),np.pi)
 
         # persistent probabilities
-        p_p = WrappedNormal(mu=self.alphas_, sig=sig_p).pdf(x=self.alphas)
+        if sig_p > 0:
+            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p).pdf(x=self.alphas)
+        else:
+            p_p = np.random.uniform((-1*np.pi),np.pi)
 
         # combined probabilities
         p_t = w * p_b + (1 - w) * p_p

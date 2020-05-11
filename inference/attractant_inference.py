@@ -125,14 +125,15 @@ class AttractantInferer(inferer):
         self.ob_dists = multivariate_normal(mus, sigs ** 2)
 
         # these are the default priors
+        # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         if priors is None:
-            self.priors = [Normal(5 * 60, 4 * 60),
-                           Normal(400, 300),
-                           Normal(60, 16),
-                           Normal(0.3, 0.2),
-                           Normal(0.1, 0.2),
-                           Normal(4, 4),
-                           Normal(0.001, 0.0005)]
+            self.priors = [TruncatedNormal(5 * 60, 4 * 60),
+                           TruncatedNormal(400, 300),
+                           TruncatedNormal(60, 16),
+                           TruncatedNormal(0.3, 0.2),
+                           TruncatedNormal(0.1, 0.2),
+                           TruncatedNormal(4, 4),
+                           TruncatedNormal(0.001, 0.0005)]
         else:
             assert isinstance(priors, list)
             assert len(priors) == 7
