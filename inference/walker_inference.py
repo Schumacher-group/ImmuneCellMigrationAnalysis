@@ -209,14 +209,14 @@ class BiasedPersistentInferer(inferer):
             p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
         ## Need to double check that this working
         else:
-            p_0 = np.random.uniform((-1*np.pi),np.pi)
-            p_b = np.random.uniform((-1*np.pi),np.pi)
+            p_0 = WrappedNormal(mu=self.beta0, sig=100).pdf(x=self.alpha0)
+            p_b = WrappedNormal(mu=self.betas, sig=100).pdf(x=self.alphas)
 
         # persistent probabilities
         if sig_p > 0:
             p_p = WrappedNormal(mu=self.alphas_, sig=sig_p).pdf(x=self.alphas)
         else:
-            p_p = np.random.uniform((-1*np.pi),np.pi)
+            p_p = WrappedNormal(mu=self.alphas, sig=100).pdf(x=self.alphas)
 
         # combined probabilities
         p_t = w * p_b + (1 - w) * p_p
