@@ -37,7 +37,7 @@ for i in [0,1,2,3]:
         std = data[1]
         ob_readings[(distance[j], time[i])] = (mean,std)
 
-# Attracnt inference
+# Attractant inference
 
 inferer = AttractantInferer(ob_readings, wound=wound, t_units='minutes')
 out1 = inferer.multi_infer(n_walkers=5,
