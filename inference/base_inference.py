@@ -53,6 +53,8 @@ class inferer:
 
         # initialise the step size to be 1/20 of the std of the priors
         step = [prior.std() / 20 for prior in self.priors]
+        maxstep = [prior.std() / 4 for prior in self.priors]
+        minstep = [prior.std() / 100 for prior in self.priors]
         step_factor = 1 # for adapting step size towards optimal acceptance ratio
         total_accepts = 0
         rolling_accepts = 0
@@ -101,7 +103,8 @@ class inferer:
 
                 # drive acceptance rate towards 0.234, as per Roberts, G.O., Gelman, A., Gilks, W.R. (1997). Weak Convergence and Optimal Scalingof Random Walk Metropolis Algorithms.Ann. Appl. Probab.7, 110-20. Though note there's been some debate since e.g.  http://probability.ca/jeff/ftpdir/mylene2.pdf
                 step_factor *= (ar / 0.234) # Updated to adjust step sizing and to stop any issues with negatives in stdev calc
-                step = step_factor * np.array(params_out)[:i, ].std(0) / 3
+                step = np.min([np.max([step_factor * np.array(params_out)[:i, ].std(0) / 3,
+                            minstepfactor]), maxstepfactor])
 
                 if use_tqdm:
                     pbar.set_description('Total acceptance Rate: {:.3f}. Rolling acceptance rate: {:.3f}'.format(ar, rar))

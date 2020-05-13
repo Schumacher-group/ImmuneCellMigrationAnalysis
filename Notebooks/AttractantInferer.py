@@ -48,4 +48,4 @@ out1 = inferer.multi_infer(n_walkers=6,
                             suppress_warnings=True,
                             use_tqdm=True)
 #Saves the current attractant inference numpy array for processing
-AttractantInference = np.save('.../data/AttractantInferenceMutant',out1)
+np.save('../data/AttractantInferenceMutant',out1)
