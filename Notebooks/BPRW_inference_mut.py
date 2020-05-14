@@ -91,13 +91,14 @@ for i in range(len(distance)):
 from in_silico.sources import PointSource
 source = PointSource(position=np.array([0, 0]))
 
-
+k = 0
 from inference.walker_inference import BiasedPersistentInferer, prepare_paths
 for i in range(len(distance)):
 # for i in [0]:
     for j in range(len(s_distance[0])):
     # for j in [0]:
-        print('analysing bin '+str(i*j)+'/'+str(len(distance)*len(s_distance[0])))# to give an overall sence of progress
+        k += 1 # Tracks the number of bins
+        print('analysing bin {}/{}'.format(k ,(len(distance)*len(s_distance[0]))))# to give an overall sense of progress
         inf = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False),source)
         inf_out = inf.multi_infer(n_walkers=6,n_steps=10000,burn_in=5000, suppress_warnings=True, use_tqdm  = True)
         np.save('../data/np_array/WB total mutant-{}{}'.format(i,j),inf_out)
