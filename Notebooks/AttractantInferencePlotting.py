@@ -19,8 +19,34 @@ from utils.distributions import Normal
 
 # Loads the np.array
 out1 = np.load('../data/Control_data/Attractant Inference/MutantData.npy')
+def Bias_persistance(x,y):
+    Dataset = np.load('../data/np_array/WB total mutant-{}{}.npy'.format(x,y))
+    #Dataset =  np.load('../data/Control_data/WB control mutant-{}{}.npy'.format(x,y)) # IF you want to use the mutant control dataset uncomment
+    #Dataset = np.load('../data/Control_data/WB mutant-{}{}.npy'.format(x,y))
 
+    W = Dataset[:,0]
+    B = Dataset[:,2]
+    OB = (W * B)
+    mean = np.mean(OB,axis=0)
+    std = np.std(OB,axis=0)
+
+    return mean,std
+
+
+distance = [25,50,75,100,125,150,175,200]
+time = [5,10,30,50]
+
+ob_readings = {}
+for i in range(len(time)):
+    for j in range(len(distance)):
+        data = Bias_persistance(j,i)
+        mean = data[0]
+        std = data[1]
+        ob_readings[(distance[j], time[i])] = (mean,std)
+
+# Attractant inference
 wound = PointWound(position=np.array([0, 0]))
+inferer = AttractantInferer(ob_readings, wound=wound, t_units='minutes')
 ## Plots the attractant inference data set
 
 fig, axes = plt.subplots(nrows=1, ncols=7, figsize=(12, 5), sharex='col')
