@@ -216,7 +216,7 @@ class TruncatedNormal(ScipyDistribution):
 
 
     def get_xlims(self):
-        return 0, 5 * self.sig
+        return 0, 10 * self.sig
 
 
 class Uniform(ScipyDistribution):
