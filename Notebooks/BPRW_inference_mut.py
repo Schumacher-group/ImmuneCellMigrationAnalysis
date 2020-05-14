@@ -53,10 +53,10 @@ df5 = filename("five","E",x_wound_m[4],y_wound_m[4])
 df6 = filename("six","F",x_wound_m[5],y_wound_m[5])
 df7 = filename("seven","G",x_wound_m[6],y_wound_m[6])
 
-#FramesMut = [df1,df2,df4,df6,df7] # exclude dataframes 3 and 5, they are the control for the mutant tissue
-FrameContMut = [df3,df5]
-#df = pd.concat(FramesMut)
-df = pd.concat(FrameContMut) #Concatenates the control mutated data
+FramesMut = [df1,df2,df4,df6,df7] # exclude dataframes 3 and 5, they are the control for the mutant tissue
+# FrameContMut = [df3,df5]
+df = pd.concat(FramesMut)
+# df = pd.concat(FrameContMut) #Concatenates the control mutated data
 
 # The inference mechanism is dependent on the length of the array, if there are not enough tracks
 # available in the array it cannot converge
@@ -92,11 +92,12 @@ from in_silico.sources import PointSource
 source = PointSource(position=np.array([0, 0]))
 
 
-
 from inference.walker_inference import BiasedPersistentInferer, prepare_paths
-#for i in range(4):
-for i in [0]:
-    for j in [0]:
+for i in range(len(distance)):
+# for i in [0]:
+    for j in range(len(s_distance[0])):
+    # for j in [0]:
+        print('analysing bin '+str(i*j)+'/'+str(len(distance)*len(s_distance[0])))# to give an overall sence of progress
         inf = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False),source)
         inf_out = inf.multi_infer(n_walkers=6,n_steps=10000,burn_in=5000, suppress_warnings=True, use_tqdm  = True)
-        np.save('../data/np_array/WB total control mutant-{}{}'.format(i,j),inf_out)
+        np.save('../data/np_array/WB total mutant-{}{}'.format(i,j),inf_out)

@@ -15,21 +15,21 @@ Time = ["Time = 0-10 mins","Time = 3-17 mins","Time = 15-45 mins","Time = 35-65 
 
 # Load the posterior numpy arrays
 def loadData(x,y):
-    Test = np.load('../data/np_array/WB frame total control -{}{}.npy'.format(x,y))
+    Test = np.load('../data/np_array/WB total mutant-{}{}.npy'.format(x,y))
     return Test
 
 ## Plot the posterior distribution for np.arrays
 fig, ax = plt.subplots(4,figsize=(10,10),sharex=True,sharey=True)
-fig.suptitle("Random walker 2 videos control inference")
+fig.suptitle("Random walker mutant inference")
 
 for i in [7]:
     for j in [0,1,2,3]:
         data = loadData(i,j)
-        
+
         W = data[:,0]
         P = data[:,1]
         B = data[:,2]
-        
+
         ax[j].set_ylim([0, 40])
         ax[j].hist(W,label='$W$ = {:.2f} $\pm$ {:.2f}'.format(np.mean(W), np.std(W)),bins=100,alpha=0.6,density=True)
         ax[j].hist(P,label='$P$ = {:.2f} $\pm$ {:.2f}'.format(np.mean(P), np.std(P)),bins=100,alpha=0.6,density=True)
@@ -39,17 +39,14 @@ for i in [7]:
 
         ax[j].legend(prop={'size': 6})
 
-## This outputs the trace for a specified np.array 
+## This outputs the trace for a specified np.array
 fig, axes = plt.subplots(ncols=1, nrows=3, sharex=True)
 
 for i in [0,1,2]:
     dist_out = loadData(7,0)
     axes[i].plot(dist_out[:, i], linewidth=0.5, color=plt.rcParams['axes.prop_cycle'].by_key()['color'][i], alpha=0.7)
     axes[i].set_title(['$w$', '$p$', '$b$'][i])
-    
+
 axes[1].set_ylabel('Sampled value', size='large')
 axes[2].set_xlabel('MCMC step', size='large')
 plt.tight_layout()
-
-
-
