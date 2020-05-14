@@ -200,7 +200,7 @@ class WrappedNormal:
 
 class TruncatedNormal(ScipyDistribution):
 
-    def __init__(self,mu: Union[float, np.ndarray], sig: Union[float, np.ndarray]):
+    def __init__(self,mu: float, sig: float):
         """
 
         A truncated normal distribution, allowing only positive
@@ -210,7 +210,8 @@ class TruncatedNormal(ScipyDistribution):
         ----------
         sig    the scale of the normal distribution, which is then truncated.
         """
-        super().__init__(dist_type=truncnorm, a=0, b=np.inf, loc=mu, scale=sig)
+        a,b = (0-mu)/sig,(np.inf-mu)/sig
+        super().__init__(dist_type=truncnorm, a=a, b=b, loc=mu, scale=sig)
         self.sig = sig
 
 
