@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 ## This takes in the Random Walker inferred parameters and outputs a dictionary with the observed bias parameters
 
 def Bias_persistance(x,y):
-    Dataset = np.load('../data/np_array/WB total mutant-{}{}.npy'.format(x,y))
+    Dataset = np.load('../data/np_array/WB Mutant-{}{}.npy'.format(x,y))
     #Dataset =  np.load('../data/Control_data/WB control mutant-{}{}.npy'.format(x,y)) # IF you want to use the mutant control dataset uncomment
     #Dataset = np.load('../data/Control_data/WB mutant-{}{}.npy'.format(x,y))
 
