@@ -15,8 +15,8 @@ class inferer:
     def log_prior(self, params: np.ndarray) -> float:
         raise NotImplementedError
 
-    def infer(self, n_steps: int, burn_in: int, seed: int=0,
-              suppress_warnings: bool=False, use_tqdm: bool=True, step: int = 0.1) -> np.ndarray:
+    def infer(self, n_steps: int, burn_in: int,  step: int,seed: int=0,
+              suppress_warnings: bool=False, use_tqdm: bool=True) -> np.ndarray:
         """
         Perform one session of MCMC inference on biased-persistent parameters.
         The starting point is sampled from the priors.
@@ -113,7 +113,7 @@ class inferer:
 
         return np.array(params_out)[burn_in:, :]
 
-    def multi_infer(self, n_walkers: int, n_steps: int, burn_in: int, seed: int=0,
+    def multi_infer(self, n_walkers: int, n_steps: int, burn_in: int, step:int, seed: int=0,
                     suppress_warnings: bool=False, use_tqdm: bool=True) -> np.ndarray:
         """
         Perform inference with n_walkers starting points, in parallel
