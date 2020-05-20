@@ -41,13 +41,15 @@ step = [1,0.1,0.01,0.001]
 # Attractant inference
 wound = PointWound(position=np.array([0, 0]))
 inferer = AttractantInferer(ob_readings, wound=wound, t_units='minutes')
-for i in range(step):
+for i in range(len(step)):
     out1 = inferer.multi_infer(n_walkers=6,
                                 n_steps=500000,
                                 burn_in=300000,
+                                step = step[i],
                                 seed=0,
                                 suppress_warnings=True,
-                                use_tqdm=True, step = step[i])
+                                use_tqdm=True
+                                )
     np.save('../data/AttractantInferenceMutant{}'.format(step[i]),out1)
 
 #Saves the current attractant inference numpy array for processing
