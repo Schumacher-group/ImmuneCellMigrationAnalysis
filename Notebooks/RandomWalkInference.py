@@ -109,5 +109,5 @@ for n in range(len(Types)):
             k += 1 # Tracks the number of bins
             print('analysing bin {}/{}{}'.format(k,n,(len(distance)*len(s_distance[0]))))# to give an overall sense of progress
             inf = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False), PointSource((0,0)))
-            inf_out = inf.multi_infer(n_walkers=10,n_steps=15000,burn_in=5000, suppress_warnings=True, use_tqdm  = True)
+            inf_out = inf.multi_infer(n_walkers=10,n_steps=15000,burn_in=5000,step=0, suppress_warnings=True, use_tqdm  = True)
             np.save('../data/np_array/WB total WT {}-{}{}'.format(Gender[n],i,j),inf_out)
