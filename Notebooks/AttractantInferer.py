@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 ## This takes in the Random Walker inferred parameters and outputs a dictionary with the observed bias parameters
 
 def Bias_persistance(x,y):
-    Dataset = np.load('../data/np_array/WB WT-{}{}.npy'.format(x,y))
+    Dataset = np.load('../data/np_array/WB Mutant-{}{}.npy'.format(x,y))
     W = Dataset[:,0]
     B = Dataset[:,2]
     OB = (W * B)
@@ -45,4 +45,4 @@ out1 = inferer.multi_infer(n_walkers=16,
                             suppress_warnings=True,
                             use_tqdm=True)
 #Saves the current attractant inference numpy array for processing
-np.save('../data/AttractantInferenceWTUniformPriors',out1)
+np.save('../data/AttractantInferenceMutantUniformPriors',out1)
