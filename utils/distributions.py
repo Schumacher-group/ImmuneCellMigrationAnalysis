@@ -200,7 +200,7 @@ class WrappedNormal:
 
 class TruncatedNormal(ScipyDistribution):
 
-    def __init__(self,mu: float, sig: float):
+    def __init__(self, mu: float, sig: float):
         """
 
         A truncated normal distribution, allowing only positive
@@ -213,6 +213,7 @@ class TruncatedNormal(ScipyDistribution):
         a,b = (0-mu)/sig,(np.inf-mu)/sig
         super().__init__(dist_type=truncnorm, a=a, b=b, loc=mu, scale=sig)
         self.sig = sig
+        self.mu  = mu
 
 
     def get_xlims(self):
@@ -221,7 +222,7 @@ class TruncatedNormal(ScipyDistribution):
 
 class Uniform(ScipyDistribution):
 
-    def __init__(self, a: Union[float, np.ndarray], b: Union[float, np.ndarray]):
+    def __init__(self, a: float, b: float):
         """
 
         A truncated normal distribution, allowing only positive
@@ -231,11 +232,9 @@ class Uniform(ScipyDistribution):
         ----------
         sig    the scale of the normal distribution, which is then truncated.
         """
-        super().__init__(dist_type=uniform)
+        super().__init__(dist_type=uniform, loc = a, scale = b)
         self.a = a
         self.b = b
-
-
     def get_xlims(self):
         return self.a, self.b
 
