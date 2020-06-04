@@ -141,8 +141,7 @@ class inferer:
                    'burn_in': burn_in,
                    'seed': i + seed,
                    'use_tqdm': use_tqdm,
-                   'suppress_warnings': suppress_warnings,
-                   'step': step} for i in range(n_walkers)]
+                   'suppress_warnings': suppress_warnings} for i in range(n_walkers)]
 
         t0 = time.time()
         print('Beginning MCMC walk in parallel')
