@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Union
 import matplotlib.pyplot as plt
-from scipy.stats import norm, lognorm, expon, truncnorm, uniform
+from scipy.stats import norm, lognorm, expon, truncnorm, uniform, loguniform
 from matplotlib.widgets import Slider, Button
 import scipy
 import time
@@ -233,6 +233,25 @@ class Uniform(ScipyDistribution):
         sig    the scale of the normal distribution, which is then truncated.
         """
         super().__init__(dist_type=uniform, loc = a, scale = b)
+        self.a = a
+        self.b = b
+    def get_xlims(self):
+        return self.a, self.b
+
+class Loguniform(ScipyDistribution):
+
+    def __init__(self,a: Union[float, np.ndarray], b: Union[float, np.ndarray]):
+        """
+
+        A log-uniform distribution, which allows sampling from different orders of
+        magnitude
+
+        Parameters
+        ----------
+        a    the minimum of the loguniform distribution
+        b    the  maximum of the loguniform distribution
+        """
+        super().__init__(dist_type=loguniform, a = a, b = b)
         self.a = a
         self.b = b
     def get_xlims(self):
