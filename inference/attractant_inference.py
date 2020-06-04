@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath('..'))
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from utils.distributions import WrappedNormal, Uniform, Normal, TruncatedNormal
+from utils.distributions import WrappedNormal, Uniform, Normal, TruncatedNormal, Loguniform
 from inference.base_inference import inferer
 from typing import Union
 from utils.exceptions import SquareRootError
@@ -127,8 +127,8 @@ class AttractantInferer(inferer):
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         if priors is None:
-            self.priors = [Uniform(0,10000),
-                           Uniform(0,10000),
+            self.priors = [Loguniform(0,10000),
+                           Loguniform(0,10000),
                            Uniform(0,100),
                            Uniform(0,1),
                            Uniform(0,1),
