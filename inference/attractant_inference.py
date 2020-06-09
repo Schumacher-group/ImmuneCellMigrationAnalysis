@@ -31,8 +31,9 @@ def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array
     """
 
     q, D, tau, R_0, kappa = params[:5]
+    b0 = 0
     A = wound.concentration(params, r, t)
-    k = (0.25 * (kappa + R_0 + A) ** 2 - R_0 * A)
+    k = (0.25 * (kappa + R_0 + A) ** 2 - R_0 * A) + b0
 
     if np.array(k < 0).any():
         raise SquareRootError('Value to be square-rooted in complex eqn is less than zero')
@@ -57,8 +58,8 @@ def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.a
 
     """
 
-    q, D, tau, R_0, kappa, m, b_0 = params
-    return m * (complexes(params, r - dr, t, wound) - complexes(params, r + dr, t, wound)) + b_0
+    q, D, tau, R_0, kappa, m = params
+    return m * (complexes(params, r - dr, t, wound) - complexes(params, r + dr, t, wound))
 
 
 class AttractantInferer(inferer):
@@ -127,13 +128,12 @@ class AttractantInferer(inferer):
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         if priors is None:
-            self.priors = [Loguniform(0,10000),
-                           Loguniform(0,10000),
-                           Uniform(0,100),
-                           Uniform(0,1),
-                           Uniform(0,1),
-                           Uniform(0,100),
-                           Uniform(0.0, 0.1)]
+            self.priors = [Loguniform(1,10000),
+                           Loguniform(1,10000),
+                           Uniform(0,65),
+                           Loguniform(0.001,10),
+                           Loguniform(0.001,10),
+                           Loguniform(0.001,20)]
         else:
             assert isinstance(priors, list)
             assert len(priors) == 7

@@ -38,11 +38,11 @@ for i in range(len(time)):
 # Attractant inference
 wound = PointWound(position=np.array([0, 0]))
 inferer = AttractantInferer(ob_readings, wound=wound, t_units='minutes')
-out1 = inferer.multi_infer(n_walkers=7,
-                            n_steps=200000,
-                            burn_in=30000,
+out1 = inferer.multi_infer(n_walkers=10,
+                            n_steps=500000,
+                            burn_in=500000,
                             seed=0,
                             suppress_warnings=True,
                             use_tqdm=True)
 #Saves the current attractant inference numpy array for processing
-np.save('../data/AttractantInferenceWTUniformPriors',out1)
+np.save('../data/AttractantInferenceWTMixedPriors_fixedstep',out1)s
