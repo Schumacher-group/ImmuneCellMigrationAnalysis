@@ -128,12 +128,12 @@ class AttractantInferer(inferer):
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         if priors is None:
-            self.priors = [Loguniform(1,10000),
-                           Loguniform(1,10000),
+            self.priors = [Loguniform(100,10000),
+                           Loguniform(10,10000),
                            Uniform(0,65),
-                           Loguniform(0.001,10),
-                           Loguniform(0.001,10),
-                           Loguniform(0.001,20)]
+                           Uniform(0.0,1),
+                           Uniform(0.0,1.4),
+                           Loguniform(1,1000)]
         else:
             assert isinstance(priors, list)
             assert len(priors) == 7
