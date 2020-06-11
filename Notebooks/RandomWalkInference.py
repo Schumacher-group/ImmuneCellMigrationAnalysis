@@ -9,14 +9,14 @@ from in_silico.sources import PointSource
 
 def filename(name,loc,x,y):
     filec = '../data/Control_stats_wound_{}_A_M.csv'.format(name)
-    filemut = '../data/Mutant_stats_wound_{}_A_M.csv'.format(name)
+    #filemut = '../data/Mutant_stats_wound_{}_A_M.csv'.format(name)
     filec  = pd.read_csv(filec,header=0)
-    filemut = pd.read_csv(filemut,header=0)
+    #filemut = pd.read_csv(filemut,header=0)
 
     dfcont = dataframe(filec,loc,x,y)
-    dfmut = dataframe(filemut,loc,x,y)
+    #dfmut = dataframe(filemut,loc,x,y)
 
-    return dfcont,dfmut
+    return dfcont#,dfmut
 
 def dataframe(file,loc,x,y):
     x = x
@@ -49,21 +49,21 @@ y_wound_m = [(353-234),(353-150),(353-107),(353-110),(353-238),(353-226),(353-22
 
 
 #Creates the dataframe for the WT cell types
-df1c = filename("one","A",x_wound_c[0],y_wound_c[0])[0]
-df2c = filename("two","B",x_wound_c[1],y_wound_c[1])[0]
-df3c = filename("three","C",x_wound_c[2],y_wound_c[2])[0]
-df4c = filename("four","D",x_wound_c[3],y_wound_c[3])[0]
-df5c = filename("five","E",x_wound_c[4],y_wound_c[4])[0]
-df6c = filename("six","F",x_wound_c[5],y_wound_c[5])[0]
-df7c = filename("seven","G",x_wound_c[6],y_wound_c[6])[0]
+df1c = filename("one","A",x_wound_c[0],y_wound_c[0])
+df2c = filename("two","B",x_wound_c[1],y_wound_c[1])
+df3c = filename("three","C",x_wound_c[2],y_wound_c[2])
+df4c = filename("four","D",x_wound_c[3],y_wound_c[3])
+df5c = filename("five","E",x_wound_c[4],y_wound_c[4])
+df6c = filename("six","F",x_wound_c[5],y_wound_c[5])
+df7c = filename("seven","G",x_wound_c[6],y_wound_c[6])
 #Creates the dataframe for the mutant cell types
-df1m = filename("one","A",x_wound_m[0],y_wound_m[0])[1]
-df2m = filename("two","B",x_wound_m[1],y_wound_m[1])[1]
-df3m = filename("three","C",x_wound_m[2],y_wound_m[2])[1]
-df4m = filename("four","D",x_wound_m[3],y_wound_m[3])[1]
-df5m = filename("five","E",x_wound_m[4],y_wound_m[4])[1]
-df6m = filename("six","F",x_wound_m[5],y_wound_m[5])[1]
-df7m = filename("seven","G",x_wound_m[6],y_wound_m[6])[1]
+df1m = filename("one","A",x_wound_m[0],y_wound_m[0])
+df2m = filename("two","B",x_wound_m[1],y_wound_m[1])
+df3m = filename("three","C",x_wound_m[2],y_wound_m[2])
+df4m = filename("four","D",x_wound_m[3],y_wound_m[3])
+df5m = filename("five","E",x_wound_m[4],y_wound_m[4])
+df6m = filename("six","F",x_wound_m[5],y_wound_m[5])
+df7m = filename("seven","G",x_wound_m[6],y_wound_m[6])
 #WT totle
 dfWT = pd.concat([df1c,df2c,df3c,df4c,df5c,df6c,df7c])
 #Male WT
@@ -89,25 +89,24 @@ def space_slice(df):
     return [s25,s50,s75,s100,s125,s150,s175]
 
 def time_slice(space):
-    t10 = space[(space['t'] >=  0)  & (space['t'] <=600)]
-    t17 = space[(space['t'] >=  180)  & (space['t'] <=1020)]
+    t5 = space[(space['t'] >=  0)  & (space['t'] <=600)]
+    t15 = space[(space['t'] >=  180)  & (space['t'] <=1620)]
     t30 = space[(space['t'] >= 900)  & (space['t'] <= 2700)]
-    t45 = space[(space['t'] >= 1600)  & (space['t'] <= 3800)]
-    times = [t10,t17,t30,t45]
+    t50 = space[(space['t'] >= 2100)  & (space['t'] <= 3900)]
+    times = [t5,t15,t30,t50]
     return times
-Types = [dfWTM,dfWTF,dfMutM,dfMutF,dfMutCont]
-Gender = ["WT-Male","WT-Female","Mut-Male","Mut-Female","Mut-Cont"]
-for n in range(len(Types)):
-    distance = space_slice(Types[n])
-    s_distance = []
-    for i in range(len(distance)):
-        s_distance.append(time_slice(distance[i]))
-    k = 0
-    time = s_distance[0]
-    for i in range(len(s_distance)):
-        for j in range(4):
-            k += 1 # Tracks the number of bins
-            print('analysing bin {}/{}{}'.format(k,n,(len(distance)*len(s_distance[0]))))# to give an overall sense of progress
-            inf = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False), PointSource((0,0)))
-            inf_out = inf.multi_infer(n_walkers=10,n_steps=15000,burn_in=5000,step=0, suppress_warnings=True, use_tqdm  = True)
-            np.save('../data/np_array/WB total WT {}-{}{}'.format(Gender[n],i,j),inf_out)
+#Types = [dfWTM,dfWTF,dfMutM,dfMutF,dfMutCont]
+#Gender = ["WT-Male","WT-Female","Mut-Male","Mut-Female","Mut-Cont"]
+distance = space_slice(dfWT)
+s_distance = []
+for i in range(len(distance)):
+    s_distance.append(time_slice(distance[i]))
+k = 0
+time = s_distance[0]
+for i in range(len(s_distance)):
+    for j in range(len(times)):
+        k += 1 # Tracks the number of bins
+        print('analysing bin {}/{}{}'.format(k,n,(len(distance)*len(s_distance[0]))))# to give an overall sense of progress
+        inf = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False), PointSource((0,0)))
+        inf_out = inf.multi_infer(n_walkers=10,n_steps=15000,burn_in=5000,step=0, suppress_warnings=True, use_tqdm  = True)
+        np.save('../data/np_array/Walker WT-{}{}'.format(,i,j),inf_out)
