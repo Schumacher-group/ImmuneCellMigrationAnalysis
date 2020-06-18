@@ -133,7 +133,7 @@ class AttractantInferer(inferer):
                            Uniform(0.0,10),
                            Uniform(0.0,10),
                            Loguniform(0.00001,100),
-                           Uniform(0.0,1)]
+                           Uniform(0.0,0.01)]
         else:
             assert isinstance(priors, list)
             assert len(priors) == 7
