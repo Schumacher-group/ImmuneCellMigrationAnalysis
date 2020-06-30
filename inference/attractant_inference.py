@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.abspath('..'))
-
+import emcee
 import numpy as np
 from scipy.stats import multivariate_normal
 from utils.distributions import WrappedNormal, Uniform, Normal, TruncatedNormal, Loguniform
@@ -127,13 +127,13 @@ class AttractantInferer(inferer):
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         if priors is None:
-            self.priors = [Loguniform(1,800000),
-                           Loguniform(1,10000),
+            self.priors = [Uniform(0,800000),
+                           Uniform(0,10000),
                            Uniform(0,60),
                            Uniform(0.0,10),
                            Uniform(0.0,10),
-                           Loguniform(0.00001,100),
-                           Uniform(0.0,0.01)]
+                           Uniform(0.0,100),
+                           Uniform(0.0,1)]
         else:
             assert isinstance(priors, list)
             assert len(priors) == 7
@@ -158,7 +158,13 @@ class AttractantInferer(inferer):
             return -np.inf
 
     def log_prior(self, params: np.ndarray):
-        return sum([prior.logpdf(param) for prior, param in zip(self.priors, params)])
+        q,D,tau,r0,k,m,b0=params
+        if 0.0 < q < 800000.0 and 0.0 < D < 10000.0 and 0.0 < tau < 60.0 and 0.0 < r0 < 10 and 0.0 < k < 10 and 0.0< m < 100 and 0.0 < b0 < 1:
+            return 0
+        else:
+            return -np.inf
+
+
 
 
 if __name__ == '__main__':
