@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 ## This takes in the Random Walker inferred parameters and outputs a dictionary with the observed bias parameters
 
 def Bias_persistance(x,y):
-    Dataset =  np.load('../data/np_array/WB Mutant-{}{}.npy'.format(x,y))
+    Dataset =  np.load('../data/np_array/WB WT-{}{}.npy'.format(x,y))
 
     W = Dataset[:,0]
     B = Dataset[:,2]
@@ -46,11 +46,13 @@ for i in range(len(time)):
 
 # Attractant inference
 # Variables needed for Ensemble Monte Carlo
-niter = 3000
-nwalkers = 400
+run_time = 1000
+nwalkers = 100
+burn_in = 250
+niter = burn_in + run_time
 # Variables needed for Metroplis-Hastings Monte Carlo
 nsteps = 1000
-burn_in = 100
+burn_in = 250
 
 wound = PointWound(position=np.array([0, 0]))
 inferer = AttractantInferer(ob_readings, wound=wound, t_units='minutes')
@@ -67,3 +69,15 @@ import seaborn as sns
 sns.distplot(samples[:,1], label = "Wild type")
 plt.xlabel("Diffusion coefficient ($D$)")
 plt.ylabel("Density")
+
+# Outputs the chains for each parameters
+fig, axes = plt.subplots(7, figsize=(10, 7), sharex=True)
+labels = ["q", "D", "$\\tau$", "$\kappa_d$","R_0","m","b_0"]
+for i in range(len(labels)):
+    ax = axes[i]
+    ax.plot(samples[:,i], alpha=1)
+    ax.set_xlim(0, len(samples))
+    ax.set_ylabel(labels[i])
+    ax.yaxis.set_label_coords(-0.1, 0.5)
+
+axes[-1].set_xlabel("step number")
