@@ -1,6 +1,8 @@
 from typing import Iterable, Union
 import time
 import numpy as np
+import emcee
+
 from tqdm import tqdm
 from utils.parallel import parallel_methods
 
@@ -14,8 +16,31 @@ class inferer:
 
     def log_prior(self, params: np.ndarray) -> float:
         raise NotImplementedError
+# This implements the emcee library for Ensemble Monte Carlo method
+    def log_probability(self, params: np.ndarray):
+        lp = self.log_prior(params)
+        if not np.isfinite(lp):
+            return -np.inf
+        return lp + self.log_likelihood(params)
 
-    def infer(self, n_steps: int, burn_in: int,seed: int=0,
+    def Ensembleinfer(self,nwalkers:int,niter: int,ob_readings):
+        initial = np.array([prior.sample() for prior in self.priors])
+        ndim = len(initial)
+        p0 = [np.array(initial) + 1e-7 * np.random.randn(ndim) for i in range(nwalkers)]
+        L_p = self.log_probability
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, L_p)
+
+        print("Running burn-in...")
+        p0, _, _ = sampler.run_mcmc(p0, 250,progress=True)
+        sampler.reset()
+
+        print("Running production...")
+        pos, prob, state = sampler.run_mcmc(p0, niter,progress=True)
+
+        return sampler, pos, prob, state
+
+# This implements the Metroplis-Hastings Monte Carlo method
+    def MHinfer(self, n_steps: int, burn_in: int,seed: int=0,
               suppress_warnings: bool=False, use_tqdm: bool=True) -> np.ndarray:
         """
         Perform one session of MCMC inference on biased-persistent parameters.
@@ -50,10 +75,11 @@ class inferer:
         params = np.array(init_params)
         n_params = len(params)
         params_out = np.zeros((n, n_params))
-
+        Ar = []
+        init_step = np.random.uniform(1,100)
         # initialise the step size to be 1/20 of the std of the priors
         step = [prior.std() / 20 for prior in self.priors]
-        maxstep = [prior.std() / 4 for prior in self.priors]
+        maxstep = [prior.std() / 10 for prior in self.priors]
         minstep = [prior.std() / 100 for prior in self.priors]
         step_factor = 1 # for adapting step size towards optimal acceptance ratio
         total_accepts = 0
@@ -104,17 +130,16 @@ class inferer:
                 # drive acceptance rate towards 0.234, as per Roberts, G.O., Gelman, A., Gilks, W.R. (1997). Weak Convergence and Optimal Scalingof Random Walk Metropolis Algorithms.Ann. Appl. Probab.7, 110-20. Though note there's been some debate since e.g.  http://probability.ca/jeff/ftpdir/mylene2.pdf
                 step_factor *= (ar / 0.23) # Updated to adjust step sizing and to stop any issues with negatives in stdev calc
 
-                step = step_factor * np.array(params_out)[:i, ].std(0) / 7
-                """
-                np.minimum(np.maximum(step_factor * np.array(params_out)[:i, ].std(0) / 3,
-                            minstep), maxstep) # elementwise min/max
-                """
+                step = step_factor * np.array(params_out)[:i, ].std(0)/3#np.minimum(np.maximum(0.5 * np.array(params_out)[:i, ].std(0) / 7,
+                            #minstep), maxstep) # elementwise min/max
+
 
                 if use_tqdm:
                     pbar.set_description('Total acceptance Rate: {:.3f}. Rolling acceptance rate: {:.3f}'.format(ar, rar))
                 rolling_accepts = 0
+                Ar.append(ar)
 
-        return np.array(params_out)[burn_in:, :]
+        return np.array(params_out)[burn_in:, :]#,Ar
 
     def multi_infer(self, n_walkers: int, n_steps: int, burn_in: int, seed: int=0,
                     suppress_warnings: bool=False, use_tqdm: bool=True) -> np.ndarray:
