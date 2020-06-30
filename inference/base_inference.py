@@ -26,17 +26,11 @@ class inferer:
     def Ensembleinfer(self,nwalkers:int,niter: int,ob_readings):
         initial = np.array([prior.sample() for prior in self.priors])
         ndim = len(initial)
-        p0 = [np.array(initial) + 1e-7 * np.random.randn(ndim) for i in range(nwalkers)]
+        p0 = [np.array(initial) + 1e-4 * np.random.randn(ndim) for i in range(nwalkers)]
         L_p = self.log_probability
         sampler = emcee.EnsembleSampler(nwalkers, ndim, L_p)
-
-        print("Running burn-in...")
-        p0, _, _ = sampler.run_mcmc(p0, 250,progress=True)
-        sampler.reset()
-
-        print("Running production...")
-        pos, prob, state = sampler.run_mcmc(p0, niter,progress=True)
-
+        print("Running sampler: ")
+        pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
         return sampler, pos, prob, state
 
 # This implements the Metroplis-Hastings Monte Carlo method
