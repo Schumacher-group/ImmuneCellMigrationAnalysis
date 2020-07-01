@@ -69,12 +69,9 @@ class inferer:
         params = np.array(init_params)
         n_params = len(params)
         params_out = np.zeros((n, n_params))
-        Ar = []
-        init_step = np.random.uniform(1,100)
+
         # initialise the step size to be 1/20 of the std of the priors
         step = [prior.std() / 20 for prior in self.priors]
-        maxstep = [prior.std() / 10 for prior in self.priors]
-        minstep = [prior.std() / 100 for prior in self.priors]
         step_factor = 1 # for adapting step size towards optimal acceptance ratio
         total_accepts = 0
         rolling_accepts = 0
@@ -122,18 +119,15 @@ class inferer:
                 ar, rar = total_accepts / i, rolling_accepts / check_every
 
                 # drive acceptance rate towards 0.234, as per Roberts, G.O., Gelman, A., Gilks, W.R. (1997). Weak Convergence and Optimal Scalingof Random Walk Metropolis Algorithms.Ann. Appl. Probab.7, 110-20. Though note there's been some debate since e.g.  http://probability.ca/jeff/ftpdir/mylene2.pdf
-                step_factor *= (ar / 0.23) # Updated to adjust step sizing and to stop any issues with negatives in stdev calc
-
-                step = step_factor * np.array(params_out)[:i, ].std(0)/3#np.minimum(np.maximum(0.5 * np.array(params_out)[:i, ].std(0) / 7,
-                            #minstep), maxstep) # elementwise min/max
-
+                step_factor *= (ar / 0.234) # Updated to adjust step sizing and to stop any issues with negatives in stdev calc
+                step = step_factor * np.array(params_out)[:i, ].std(0) / 3
 
                 if use_tqdm:
                     pbar.set_description('Total acceptance Rate: {:.3f}. Rolling acceptance rate: {:.3f}'.format(ar, rar))
                 rolling_accepts = 0
-                Ar.append(ar)
 
-        return np.array(params_out)[burn_in:, :]#,Ar
+        return np.array(params_out)[burn_in:, :]
+
 
     def multi_infer(self, n_walkers: int, n_steps: int, burn_in: int, seed: int=0,
                     suppress_warnings: bool=False, use_tqdm: bool=True) -> np.ndarray:
@@ -157,7 +151,7 @@ class inferer:
 
         np.random.seed(seed)
         objs = [self for _ in range(n_walkers)]
-        methods = ['infer' for _ in range(n_walkers)]
+        methods = ['MHinfer' for _ in range(n_walkers)]
 
         params = [{'n_steps': n_steps,
                    'burn_in': burn_in,
