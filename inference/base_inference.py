@@ -23,7 +23,7 @@ class inferer:
             return -np.inf
         return lp + self.log_likelihood(params)
 
-    def Ensembleinfer(self,nwalkers:int,niter: int,ob_readings):
+    def Ensembleinfer(self,nwalkers:int,niter: int):
         initial = np.array([prior.sample() for prior in self.priors])
         ndim = len(initial)
         p0 = [np.array(initial) + 1e-4 * np.random.randn(ndim) for i in range(nwalkers)]

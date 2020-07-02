@@ -1,7 +1,6 @@
 import sys
 import os
 sys.path.append(os.path.abspath('..'))
-import emcee
 import numpy as np
 from scipy.stats import multivariate_normal
 from utils.distributions import WrappedNormal, Uniform, Normal, TruncatedNormal, Loguniform
@@ -127,8 +126,8 @@ class AttractantInferer(inferer):
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         if priors is None:
-            self.priors = [Uniform(0,80000),
-                           Uniform(0,5000),
+            self.priors = [Loguniform(1,80000),
+                           Loguniform(1,10000),
                            Uniform(0,60),
                            Uniform(0.0,10),
                            Uniform(0.0,10),

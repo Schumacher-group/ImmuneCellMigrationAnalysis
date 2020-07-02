@@ -1,4 +1,13 @@
+"""
+The below code runs as such:
+1) Immune cell tracking data already processed by imageJ is inputted as a csv file and then processed using the pandas
+   module to split the data set into time and space specific arrays
+2) The inference method (BiasedPersistentInferer) is then called which runs the inference pipeline on each of the time/space arrays
+3) Finally, it will save the individual numpy arrays for post-processing.
 
+WT = Wild type data
+Mut = Mutant data
+"""
 import sys
 import os
 sys.path.append(os.path.abspath('..'))
@@ -6,78 +15,76 @@ import pandas as pd
 import numpy as np
 from inference.walker_inference import BiasedPersistentInferer, prepare_paths
 from in_silico.sources import PointSource
+source = PointSource(position=np.array([0, 0]))
 
+# Variables needed for Ensemble Monte Carlo
+niter = 7500
+nwalkers = 200
+
+# Variables needed for Metroplis-Hastings Monte Carlo
+nsteps = 500000
+burn_in = 250000
+n_walkers = 6
+
+
+# Loads the file for either the mutant or wild-type csv files from imageJ
 def filename(name,loc,x,y):
-    filec = '../data/Control_stats_wound_{}_A_M.csv'.format(name)
-    #filemut = '../data/Mutant_stats_wound_{}_A_M.csv'.format(name)
-    filec  = pd.read_csv(filec,header=0)
-    #filemut = pd.read_csv(filemut,header=0)
+    fileWT = '../data/Control_stats_wound_{}_A_M.csv'.format(name)
+    filemut = '../data/Mutant_stats_wound_{}_A_M.csv'.format(name)
+    fileWT = pd.read_csv(fileWT,header=0)
+    filemut = pd.read_csv(filemut,header=0)
+    # Change from csv file to panda dataframes
+    dfWT = TrajectoryData(fileWT,loc,x,y)
+    dfmut = TrajectoryData(filemut,loc,x,y)
+    return dfWT,dfmut
 
-    dfcont = dataframe(filec,loc,x,y)
-    #dfmut = dataframe(filemut,loc,x,y)
-
-    return dfcont#,dfmut
-
-def dataframe(file,loc,x,y):
-    x = x
-    y = y
-    df1 = file
-    df = pd.DataFrame({'trackID':df1['TRACK_ID'],'t':df1['POSITION_T'],'x':df1['POSITION_X'],'y':df1['POSITION_Y']})
+# Organise the dataframe
+def TrajectoryData(file,loc,x,y):
+    wound_x = x
+    wound_y = y
+    #Produce a new data frame with only the information needed for the inference pipeline
+    df = pd.DataFrame({'trackID':file['TRACK_ID'],'t':file['POSITION_T'],'x':file['POSITION_X'],'y':file['POSITION_Y']})
+    #Adjusts the y tracks, Fiji goes from top left to bottom left for y position, python goes
+    #from bottom left to top left
     df['y'] = 353 - df['y']
-    df['x'] = df['x'] - x
-    df['y'] = df['y'] - y
-    df['r'] = wound(df['x'],df['y'],x,y)
+    #Centres the tracks on a wound location of 0,0
+    df['x'] = df['x'] - wound_x
+    df['y'] = df['y'] - wound_y
+    df['r'] = np.sqrt((wound_x - df['x'])**2 + (wound_y - df['y'])**2)
     df['trackID'] = df['trackID'].astype(str)
-    df.trackID = df.trackID + "{}".format(loc) #creates a label for the tracks to be organised by
+    #creates a label for the tracks to be organised by
+    df.trackID = df.trackID + "{}".format(loc)
     return df
 
-def wound(dfx,dfy, x,y):
-    wound_x = 0
-    wound_y = 0
-    xw = wound_x - dfx
-    yw = wound_y - dfy
-    r = np.sqrt((xw)**2 + (yw)**2)
-    return r
-
-
 # WT wound locations from videos
-x_wound_c= [145,185,181,171,145,179,175]
-y_wound_c = [(353-219),(353-125),(353-118),(353-133),(353-127),(353-99),(353-113)]
+x_wound_wt= [145,185,181,171,145,179,175]
+y_wound_wt = [(353-219),(353-125),(353-118),(353-133),(353-127),(353-99),(353-113)]
 # Mutant wound locations
 x_wound_m = [199,175,170,184,170,163,184]
 y_wound_m = [(353-234),(353-150),(353-107),(353-110),(353-238),(353-226),(353-220)]
 
 
 #Creates the dataframe for the WT cell types
-df1c = filename("one","A",x_wound_c[0],y_wound_c[0])
-df2c = filename("two","B",x_wound_c[1],y_wound_c[1])
-df3c = filename("three","C",x_wound_c[2],y_wound_c[2])
-df4c = filename("four","D",x_wound_c[3],y_wound_c[3])
-df5c = filename("five","E",x_wound_c[4],y_wound_c[4])
-df6c = filename("six","F",x_wound_c[5],y_wound_c[5])
-df7c = filename("seven","G",x_wound_c[6],y_wound_c[6])
+df1wt = filename("one","A",x_wound_wt[0],y_wound_wt[0])[0]
+df2wt = filename("two","B",x_wound_wt[1],y_wound_wt[1])[0]
+df3wt = filename("three","C",x_wound_wt[2],y_wound_wt[2])[0]
+df4wt = filename("four","D",x_wound_wt[3],y_wound_wt[3])[0]
+df5wt = filename("five","E",x_wound_wt[4],y_wound_wt[4])[0]
+df6wt = filename("six","F",x_wound_wt[5],y_wound_wt[5])[0]
+df7wt = filename("seven","G",x_wound_wt[6],y_wound_wt[6])[0]
 #Creates the dataframe for the mutant cell types
-df1m = filename("one","A",x_wound_m[0],y_wound_m[0])
-df2m = filename("two","B",x_wound_m[1],y_wound_m[1])
-df3m = filename("three","C",x_wound_m[2],y_wound_m[2])
-df4m = filename("four","D",x_wound_m[3],y_wound_m[3])
-df5m = filename("five","E",x_wound_m[4],y_wound_m[4])
-df6m = filename("six","F",x_wound_m[5],y_wound_m[5])
-df7m = filename("seven","G",x_wound_m[6],y_wound_m[6])
-#WT totle
-dfWT = pd.concat([df1c,df2c,df3c,df4c,df5c,df6c,df7c])
-#Male WT
-dfWTM = pd.concat([df1c,df3c,df4c,df7c])
-#Female WT
-dfWTF = pd.concat([df2c,df5c,df6c])
-#Mutant total
+df1m = filename("one","A",x_wound_m[0],y_wound_m[0])[1]
+df2m = filename("two","B",x_wound_m[1],y_wound_m[1])[1]
+df3m = filename("three","C",x_wound_m[2],y_wound_m[2])[1]
+df4m = filename("four","D",x_wound_m[3],y_wound_m[3])[1]
+df5m = filename("five","E",x_wound_m[4],y_wound_m[4])[1]
+df6m = filename("six","F",x_wound_m[5],y_wound_m[5])[1]
+df7m = filename("seven","G",x_wound_m[6],y_wound_m[6])[1]
+#WT total
+dfWT = pd.concat([df1wt,df2wt,df3wt,df4wt,df5wt,df6wt,df7wt])
+#Mutant total (videos 3 and 5 are internal controls)
 dfMut = pd.concat([df1m,df2m,df4m,df6m,df7m])
-#Mutant Male
-dfMutM = pd.concat([df1m,df2m,df7m])
-#Mutant Female
-dfMutF = pd.concat([df4m,df6m])
-#Mutant Control
-dfMutCont = pd.concat([df3m,df5m])
+# Time and space binning of data sets
 def space_slice(df):
     s25 = df[(df['r'] >= 5)  & (df['r'] <= 45)]
     s50 = df[(df['r'] >= 25)  & (df['r'] <= 75)]
@@ -95,18 +102,20 @@ def time_slice(space):
     t50 = space[(space['t'] >= 2100)  & (space['t'] <= 3900)]
     times = [t5,t15,t30,t50]
     return times
-#Types = [dfWTM,dfWTF,dfMutM,dfMutF,dfMutCont]
-#Gender = ["WT-Male","WT-Female","Mut-Male","Mut-Female","Mut-Cont"]
+
 distance = space_slice(dfWT)
-s_distance = []
-for i in range(len(distance)):
-    s_distance.append(time_slice(distance[i]))
+s_distance = [time_slice(distance[i]) for i in range(len(distance))]
+
+# Runs the walker inference method from inference.walker_inference
+# Initialises the count logger to 0
 k = 0
 time = s_distance[0]
 for i in range(len(s_distance)):
-    for j in range(len(times)):
+    for j in range(len(time)):
         k += 1 # Tracks the number of bins
-        print('analysing bin {}/{}{}'.format(k,n,(len(distance)*len(s_distance[0]))))# to give an overall sense of progress
-        inf = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False), PointSource((0,0)))
-        inf_out = inf.multi_infer(n_walkers=10,n_steps=15000,burn_in=5000,step=0, suppress_warnings=True, use_tqdm  = True)
-        np.save('../data/np_array/Walker WT-{}{}'.format(,i,j),inf_out)
+        print('analysing bin {}/{}'.format(k,(len(distance)*len(time))))# to give an overall sense of progress
+        inferer = BiasedPersistentInferer(prepare_paths([paths[['x', 'y']].values for id, paths in s_distance[i][j].groupby('trackID')],include_t=False),source)
+        inf_out = inferer.Ensembleinfer(nwalkers,niter)
+        #MHOut = inferer.multi_infer(n_walkers,nsteps,burn_in,seed=0,suppress_warnings=True,use_tqdm=True)
+        # Saves each time and space array as a numpy array for post processing
+        np.save('../data/np_array/Walker WT-{}{}'.format(i,j),inf_out)
