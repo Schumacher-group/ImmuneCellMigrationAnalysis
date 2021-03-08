@@ -1,3 +1,6 @@
+import sys
+sys.path.append('..')
+
 import numpy as np
 from scipy.stats import multivariate_normal
 from utils.distributions import WrappedNormal, Uniform, Normal, Loguniform
@@ -5,8 +8,6 @@ from inference.base_inference import inferer
 from typing import Union
 from utils.exceptions import SquareRootError
 from in_silico.sources import Wound, PointWound, CellsInsideWound, CellsOnWoundMargin
-import sys
-sys.path.append('..')
 
 # This is the Leukocyte radius: 15µm
 dr = 15
@@ -140,29 +141,24 @@ class AttractantInferer(inferer):
         """
         if dynamics == 0:
             if priors is None:
-                self.priors = [Loguniform(100,10000),
-                          Loguniform(100,10000),
+                self.priors = [Loguniform(1,5000),
+                           Normal(800,100),
                            Uniform(0,60),
                            Uniform(0,1),
                            Uniform(0,1),
                            Uniform(0,50),
-                           Uniform(0.0, 0.03)]
+                           Uniform(0.0, 0.02)]
             else:
                    assert isinstance(priors, list)
                    assert len(priors) == 7
                    self.priors = priors
         elif dynamics == 1:
-            if priors is None:
-                self.priors = [Uniform(1,100),
-                           Uniform(1,1000),
+                self.priors = [Uniform(200,50),
+                           Normal(800,100),
                            Uniform(0,1),
                            Uniform(0,1),
                            Uniform(0,50),
-                           Uniform(0.0, 0.03)]
-            else:
-                   assert isinstance(priors, list)
-                   assert len(priors) == 6
-                   self.priors = priors
+                           Uniform(0.0, 0.02)]
         else:
                  raise ValueError('The concentration choice should be either continuous or delta, please re-choose')
 
@@ -184,24 +180,6 @@ class AttractantInferer(inferer):
             return self.ob_dists.logpdf(observed_bias(params, self.r, self.t, self.wound))
         except SquareRootError:
             return -np.inf
-    def likelihood(self, params: np.ndarray):
-        """
-        For a set of parameters, calculate the log-likelihood of these
-        parameters
-
-        Parameters
-        ----------
-        params      a tuple containing q, D, tau, R_0, kappa, m, b_0
-
-        Returns
-        -------
-        The log likelihood
-        """
-        try:
-            return self.ob_dists.pdf(observed_bias(params, self.r, self.t, self.wound))
-        except SquareRootError:
-            return -np.inf
-
 
     def log_prior(self, params: np.ndarray):
         return sum([prior.logpdf(param) for prior, param in zip(self.priors, params)])
