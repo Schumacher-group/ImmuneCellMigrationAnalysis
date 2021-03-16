@@ -1,7 +1,5 @@
 import sys
 import os
-sys.path.append(os.path.abspath('..'))
-
 import numpy as np
 from utils.angles import angle_between
 from in_silico.walkers import reference_axis
@@ -11,7 +9,10 @@ from inference.base_inference import inferer
 from utils.checks import check_valid_prior, check_is_numpy
 from utils.misc import nan_concatenate
 
-def prepare_paths(paths: list, min_t: int=5, include_t=True) -> np.ndarray:
+sys.path.append(os.path.abspath('..'))
+
+
+def prepare_paths(paths: list, min_t: int = 1, include_t=True) -> np.ndarray:
     """
     This function converts a list of paths, which come in the standard form, (each element is a (t, 3) array
     where column 0 has the frame index, column 1 has the x coordinates and column 2 has the y coordinates) into
@@ -48,7 +49,6 @@ def prepare_paths(paths: list, min_t: int=5, include_t=True) -> np.ndarray:
                     passed to the inference class. (T, 2, N)
     """
 
-
     if len(paths) == 0:
         return np.array([]).reshape(0, 2, 0)
 
@@ -57,7 +57,6 @@ def prepare_paths(paths: list, min_t: int=5, include_t=True) -> np.ndarray:
         paths = [path[:, 1:] for path in paths if path.shape[0] >= min_t]
     else:
         paths = [path for path in paths if path.shape[0] >= min_t]
-
 
     paths_array = np.zeros((max_t, 2, len(paths)))
     paths_array[:] = np.nan
@@ -98,7 +97,7 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
 
 class BiasedPersistentInferer(inferer):
 
-    def __init__(self, paths: list, sources: list, priors: list=None):
+    def __init__(self, paths: list, sources: list, priors: list = None):
         """
         Initialise an inference pipeline for biased persistent walkers.
         Pass in a set of observed paths, with a corresponding set of
@@ -196,10 +195,10 @@ class BiasedPersistentInferer(inferer):
         if (params > 1).any() or (params < 0).any():
             return -np.inf
 
-        w, p, b = params
+        w, p1, b = params
 
         sig_b = (-2 * np.log(b)) ** 0.5
-        sig_p = (-2 * np.log(p)) ** 0.5
+        sig_p1 = (-2 * np.log(p1)) ** 0.5
 
         # The probability of observing the first step, given the angle beta0 towards the source
         # Updated to address issues with log(0), if the b or p parameter = 0, the distribution can be assumed to be Uniform.
@@ -213,8 +212,9 @@ class BiasedPersistentInferer(inferer):
             p_b = WrappedNormal(mu=self.betas, sig=100).pdf(x=self.alphas)
 
         # persistent probabilities
-        if sig_p > 0:
-            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p).pdf(x=self.alphas)
+        if sig_p1 > 0:
+            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p1).pdf(
+                x=self.alphas)  # + WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
         else:
             p_p = WrappedNormal(mu=self.alphas, sig=100).pdf(x=self.alphas)
 
@@ -249,7 +249,6 @@ class BiasedPersistentInferer(inferer):
 
         """
 
-
         if self.uniform_prior:
 
             if (params > 1).any() or (params < 0).any():
@@ -262,7 +261,6 @@ class BiasedPersistentInferer(inferer):
 
 
 if __name__ == '__main__':
-
     from in_silico.walkers import BP_Leukocyte
     from in_silico.sources import PointSource
     from utils.plotting import plot_wpb_dist

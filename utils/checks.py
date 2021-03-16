@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def check_is_numpy(obj, name: str=''):
+def check_is_numpy(obj, name: str = ''):
     """
     Check is an object is a numpy array
 
@@ -18,7 +18,8 @@ def check_is_numpy(obj, name: str=''):
     if isinstance(obj, np.ndarray):
         return True
     else:
-        raise TypeError('{} should be a numpy aray, but it is {}'.format(name, type(obj)))
+        raise TypeError('{} should be a numpy array, but it is {}'.format(name, type(obj)))
+
 
 def check_valid_prior(priors):
     """
@@ -54,8 +55,8 @@ def check_valid_prior(priors):
         else:
             raise ValueError('The prior passed in invalid')
 
-def assert_same_length(*args):
 
+def assert_same_length(*args):
     l1 = len(args[0])
     for arg in args:
         if len(arg) != l1:

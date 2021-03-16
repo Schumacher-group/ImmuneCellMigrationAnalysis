@@ -8,10 +8,11 @@ import time
 
 import sys
 import os
+from utils.plotting import add_pi_ticks
 
 sys.path.append(os.path.split(sys.path[0])[0])
 
-from utils.plotting import add_pi_ticks
+
 
 """
 This file contains a variety of distribution classes. They are based roughly

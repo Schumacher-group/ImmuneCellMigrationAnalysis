@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.special import expi
-from typing import Union, Iterable
+from typing import Union
 from numbers import Number
+
 
 class Source:
 
@@ -36,7 +37,7 @@ class Source:
 
 class PointSource(Source):
 
-    def __init__(self, position: np.array=np.array([0, 0]), units='pixels'):
+    def __init__(self, position: np.array = np.array([0, 0]), units='pixels'):
         super().__init__(position, units)
 
     def direction_to_source(self, coords: np.array):
@@ -45,7 +46,7 @@ class PointSource(Source):
 
 class CircularSource(Source):
 
-    def __init__(self, position: np.array=np.array([0, 0]), radius: float=1):
+    def __init__(self, position: np.array = np.array([0, 0]), radius: float = 1):
         super().__init__(position)
         self.radius = radius
 
@@ -64,14 +65,19 @@ class Wound(PointSource):
     def concentration(self, params, r, t):
         raise NotImplementedError
 
+    def concentration_delta(self, params, r, t):
+        raise NotImplementedError
+
 
 class PointWound(Wound):
-
-    def __init__(self, position: np.array=np.array([0, 0])):
+    def __init__(self, position: np.array = np.array([0, 0])):
         super().__init__(position)
 
     def concentration(self, params, r, t):
         return concentration(params, r, t)
+
+    def concentration_delta(self, params, r, t):
+        return concentration_delta(params, r, t)
 
 
 class MultiPointWound(Wound):
@@ -134,7 +140,9 @@ class MultiPointWound(Wound):
         # we want the concentration at a sequence of points r and a single time t
         elif isinstance(r, np.ndarray) and isinstance(t, Number):
 
-            rs = np.concatenate([np.expand_dims((self.x[i] ** 2 + (r - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)], axis=-1)
+            rs = np.concatenate(
+                [np.expand_dims((self.x[i] ** 2 + (r - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)],
+                axis=-1)
             return concentration(scaled_params, rs, t).sum(-1)
 
         # we want the concentration at a sequence of points r and sequence of times t
@@ -142,7 +150,8 @@ class MultiPointWound(Wound):
 
             # assume we want C = [C(r1, t1), C(r2, t2) ... ]
             if r.shape == t.shape:
-                rs = np.concatenate([np.expand_dims((self.x[i] ** 2 + (r - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)], axis=-1)
+                rs = np.concatenate([np.expand_dims((self.x[i] ** 2 + (r - self.y[i]) ** 2) ** 0.5, axis=-1) for i in
+                                     range(self.n_cells)], axis=-1)
                 ts = np.concatenate([np.expand_dims(t, axis=-1) for _ in range(self.n_cells)], axis=-1)
                 return concentration(scaled_params, rs, ts).sum(-1)
 
@@ -151,7 +160,9 @@ class MultiPointWound(Wound):
                 # this checks if t is 1D
                 if sum(t.shape) - t.ndim + 1 == len(t.reshape(-1)):
                     t = t.reshape(-1)
-                    rs = np.concatenate([np.expand_dims((self.x[i] ** 2 + (r - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)], axis=-1)
+                    rs = np.concatenate(
+                        [np.expand_dims((self.x[i] ** 2 + (r - self.y[i]) ** 2) ** 0.5, axis=-1) for i in
+                         range(self.n_cells)], axis=-1)
                     ts = np.concatenate([np.expand_dims(ti * np.ones_like(rs), axis=-1) for ti in t], axis=-1)
                     rs = np.concatenate([np.expand_dims(rs, axis=-1) for _ in range(len(t))], axis=-1)
                     return concentration(scaled_params, rs, ts).sum(-2)
@@ -171,9 +182,11 @@ class MultiPointWound(Wound):
                 raise ValueError('If you want concentration at point r at all times t, t must be 1D')
 
         else:
-            raise TypeError('r and t must be numbers or numpy arrays, but they are {} and {} respectively'.format(type(r), type(t)))
+            raise TypeError(
+                'r and t must be numbers or numpy arrays, but they are {} and {} respectively'.format(type(r), type(t)))
 
-    def concentration_xy(self, params: np.ndarray, x: Union[np.ndarray, Number], y: Union[np.ndarray, Number], t: Union[np.ndarray, Number]):
+    def concentration_xy(self, params: np.ndarray, x: Union[np.ndarray, Number], y: Union[np.ndarray, Number],
+                         t: Union[np.ndarray, Number]):
         """
         Return the concentration of attractant at a point x-y at time t. This function is essentially
         a wrapper around the base concentration function that handles for all sorts of of inputs types
@@ -210,7 +223,8 @@ class MultiPointWound(Wound):
 
         # x and y must be the same type
         if type(x) != type(y):
-            raise ValueError('x and y must be the same type, but they are {} and {} respectively'.format(type(x), type(y)))
+            raise ValueError(
+                'x and y must be the same type, but they are {} and {} respectively'.format(type(x), type(y)))
 
         # we want the concentration at a single point xy at a single time t
         if isinstance(x, (float, int)) and isinstance(t, (float, int)):
@@ -222,20 +236,25 @@ class MultiPointWound(Wound):
 
             # x and y must have the same shape
             if x.shape != y.shape:
-                raise ValueError('x and y must be the same shape, but they are {} and {} respectively'.format(x.shape, y.shape))
+                raise ValueError(
+                    'x and y must be the same shape, but they are {} and {} respectively'.format(x.shape, y.shape))
 
-            rs = np.concatenate([np.expand_dims(((x - self.x[i]) ** 2 + (y - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)],axis=-1)
+            rs = np.concatenate([np.expand_dims(((x - self.x[i]) ** 2 + (y - self.y[i]) ** 2) ** 0.5, axis=-1) for i in
+                                 range(self.n_cells)], axis=-1)
             return concentration(scaled_params, rs, t).sum(-1)
 
         elif isinstance(x, np.ndarray) and isinstance(t, np.ndarray):
 
             # x and y must have the same shape
             if x.shape != y.shape:
-                raise ValueError('x and y must be the same shape, but they are {} and {} respectively'.format(x.shape, y.shape))
+                raise ValueError(
+                    'x and y must be the same shape, but they are {} and {} respectively'.format(x.shape, y.shape))
 
             # assume we want C = [C(r1, t1), C(r2, t2) ... ]
             if x.shape == t.shape:
-                rs = np.concatenate([np.expand_dims(((x - self.x[i]) ** 2 + (y - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)], axis=-1)
+                rs = np.concatenate(
+                    [np.expand_dims(((x - self.x[i]) ** 2 + (y - self.y[i]) ** 2) ** 0.5, axis=-1) for i in
+                     range(self.n_cells)], axis=-1)
                 ts = np.concatenate([np.expand_dims(t, axis=-1) for _ in range(self.n_cells)], axis=-1)
                 return concentration(scaled_params, rs, ts).sum(-1)
 
@@ -244,7 +263,9 @@ class MultiPointWound(Wound):
                 # this checks if t is 1D
                 if sum(t.shape) - t.ndim + 1 == len(t.reshape(-1)):
                     t = t.reshape(-1)
-                    rs = np.concatenate([np.expand_dims(((x - self.x[i]) ** 2 + (y - self.y[i]) ** 2) ** 0.5, axis=-1) for i in range(self.n_cells)], axis=-1)
+                    rs = np.concatenate(
+                        [np.expand_dims(((x - self.x[i]) ** 2 + (y - self.y[i]) ** 2) ** 0.5, axis=-1) for i in
+                         range(self.n_cells)], axis=-1)
                     ts = np.concatenate([np.expand_dims(ti * np.ones_like(rs), axis=-1) for ti in t], axis=-1)
                     rs = np.concatenate([np.expand_dims(rs, axis=-1) for _ in range(len(t))], axis=-1)
                     return concentration(scaled_params, rs, ts).sum(-2)
@@ -257,7 +278,8 @@ class MultiPointWound(Wound):
             # this checks is t is 1D
             if sum(t.shape) - t.ndim + 1 == len(t.reshape(-1)):
                 ts = t.reshape(1, -1)
-                rs = np.concatenate([((x - self.x ** 2) + (y - self.y) ** 2) ** 0.5 for _ in range(ts.shape[1])], axis=1)
+                rs = np.concatenate([((x - self.x ** 2) + (y - self.y) ** 2) ** 0.5 for _ in range(ts.shape[1])],
+                                    axis=1)
                 ts = np.concatenate([ts for _ in range(self.x.shape[0])], axis=0)
                 return concentration(scaled_params, rs, ts).sum(0).reshape(t.shape)
 
@@ -266,12 +288,14 @@ class MultiPointWound(Wound):
                 raise ValueError('If you want concentration at point r at all times t, t must be 1D')
 
         else:
-            raise TypeError('x/y and t must be numbers or numpy arrays but they have types {} and {} respectively'.format(type(x), type(t)))
+            raise TypeError(
+                'x/y and t must be numbers or numpy arrays but they have types {} and {} respectively'.format(type(x),
+                                                                                                              type(t)))
 
 
 class CellsOnWoundMargin(MultiPointWound):
 
-    def __init__(self, centre: np.array=np.array([0, 0]), n_cells=10, radius=15):
+    def __init__(self, centre: np.array = np.array([0, 0]), n_cells=10, radius=15):
         super().__init__(centre, n_cells, radius)
         self.positions = centre + radius * self.circle(n_cells)
         self.x = self.positions[:, 0].reshape(-1, 1)
@@ -296,7 +320,7 @@ class CellsOnWoundMargin(MultiPointWound):
 
 class CellsInsideWound(MultiPointWound):
 
-    def __init__(self, centre: np.array=np.array([0, 0]), n_cells=9, radius=15):
+    def __init__(self, centre: np.array = np.array([0, 0]), n_cells=9, radius=15):
         super().__init__(centre, n_cells, radius)
         self.positions = centre + radius * self.sunflower(n_cells)
         self.x = self.positions[:, 0].reshape(-1, 1)
@@ -325,7 +349,8 @@ class CellsInsideWound(MultiPointWound):
         return np.array(list(zip(r * np.cos(theta), r * np.sin(theta))))
 
 
-def concentration(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float]) -> Union[np.ndarray, float]:
+def concentration(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float]) -> Union[
+    np.ndarray, float]:
     """
     This function returns the concentration of attractant at a radial distance r and
     time t for a continuous point source emitting attractand at a rate q from the origin
@@ -363,7 +388,8 @@ def concentration(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.a
     elif isinstance(t, np.ndarray):
 
         if isinstance(r, np.ndarray):
-            assert r.shape == t.shape, 'r and t must be the same shape, but they have shapes {} and {} respectively'.format(r.shape, t.shape)
+            assert r.shape == t.shape, 'r and t must be the same shape, but they have shapes {} and {} respectively'.format(
+                r.shape, t.shape)
 
         out = - expi(- r ** 2 / (4 * D * t))
         out[t > tau] += expi(- r[t > tau] ** 2 / (4 * D * (t[t > tau] - tau)))
@@ -374,9 +400,46 @@ def concentration(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.a
     return factor * out
 
 
+def concentration_delta(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float]) -> Union[
+    np.ndarray, float]:
+    """
+    This implements the mass-impulse initial conditon for the diffusion equation:
+    M𝛿(r) = ∞ for r = 0 or 𝛿(r) = 0 for r != 0
+    A(r)= 0 at r = ∞ (boundary conditions)
+    From the Fourier transform of the diffusion equation we can derive the following analytical solution:
+    A(r,t) = M/sqrt(4Dt)  * exp(-r^2/4Dt)
+
+    Parameters =
+    =============
+    params = {
+    M = Initial mass concentration
+    D = Diffusion coefficient
+    }: must be passed as an array
+    t = time: can be either a float or an array
+    r = the radial distance from the wound: can be either a float or an array
+    """
+    M, D = params[:2]
+    if not isinstance(r, (Number, np.ndarray)):
+        raise TypeError('r must be either a number or a numpy array, but it is {}'.format(type(r)))
+
+    if isinstance(t, Number):
+        out = M / np.sqrt(4 * np.pi * D * t) * np.exp(-r ** 2 / (4 * D * t))
+
+    elif isinstance(t, np.ndarray):
+
+        if isinstance(r, np.ndarray):
+            assert r.shape == t.shape, 'r and t must be the same shape, but they have shapes {} and {} respectively'.format(
+                r.shape, t.shape)
+
+        out = M / np.sqrt(4 * np.pi * D * t) * np.exp(-r ** 2 / (4 * D * t))
+
+    else:
+        raise TypeError('t must be either a number or a numpy array, but it is {}'.format(type(t)))
+
+    return out
+
 
 if __name__ == '__main__':
-
     wound = CellsOnWoundMargin()
     c = wound.concentration(np.ones(7), np.linspace(1, 9, 9), np.linspace(1, 9, 9))
     print(c)

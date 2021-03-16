@@ -1,9 +1,9 @@
 import sys
-import os
-sys.path.append(os.path.abspath('..'))
+sys.path.append('..')
+
 import numpy as np
 from scipy.stats import multivariate_normal
-from utils.distributions import WrappedNormal, Uniform, Normal, TruncatedNormal, Loguniform
+from utils.distributions import WrappedNormal, Uniform, Normal, Loguniform
 from inference.base_inference import inferer
 from typing import Union
 from utils.exceptions import SquareRootError
@@ -26,11 +26,16 @@ def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array
     Returns
     -------
     C       The concentration of complexes
-
+    This allows the model to choose which production equation is used, and passes the argument to the
+    correct concentration equation
     """
+    if len(params) == 7:
+        q, D, tau, R_0, kappa = params[:5]
+        A = wound.concentration(params, r, t)
+    else:
+        M,D, R_0, kappa = params[:4]
+        A = wound.concentration_delta(params,r,t)
 
-    q, D, tau, R_0, kappa = params[:5]
-    A = wound.concentration(params, r, t)
     k = (0.25 * (kappa + R_0 + A) ** 2 - R_0 * A)
 
     if np.array(k < 0).any():
@@ -54,18 +59,22 @@ def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.a
     -------
     The observed bias
 
+    This allows the model to choose which production equation is used
     """
-
-    q, D, tau, R_0, kappa, m, b0 = params
-    return m * (complexes(params, r - dr, t, wound) - complexes(params, r + dr, t, wound)) + b0
+    if len(params) == 7:
+        q, D, tau, R_0, kappa, m, b_0 = params
+    else:
+        M,D, R_0, kappa, m, b_0 = params
+    return m * (complexes(params, r - dr, t, wound) - complexes(params, r + dr, t, wound)) + b_0
 
 
 class AttractantInferer(inferer):
 
-    def __init__(self, ob_readings: dict, wound: Wound, priors: list=None, t_units='minutes'):
+    def __init__(self, ob_readings: dict, wound: Wound, priors: list=None,dynamics:int = 0, t_units='minutes'):
         """
         Perform inference on observed bias readings to infer the posterior distribution over the
-        attractant dynamics parameters {q, D, τ, R0, κ, m, b0}.
+        attractant dynamics parameters {q, D, τ, R0, κ, m, b0} or {M, D, R0, κ, m, b0} depending on which
+        production equation is chosen.
 
         A dictionary specifying the observed bias readings must be provided, along with a certain
         instantiated wound (which can be a PointWound, a CellsOnWoundMargin or CellsInsideWound) .
@@ -104,7 +113,7 @@ class AttractantInferer(inferer):
         super().__init__()
 
         self.wound = wound
-
+        self.dynamics = dynamics
         assert t_units in ['seconds', 'minutes'], 't_units must be either "seconds" or "minutes" but it is {}'.format(t_units)
 
         # the total number of readings
@@ -123,20 +132,36 @@ class AttractantInferer(inferer):
         # this is our multivariate Gaussian observed bias distribution
         self.ob_dists = multivariate_normal(mus, sigs ** 2)
 
+
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
-        if priors is None:
-            self.priors = [Loguniform(1,80000),
-                           Loguniform(1,10000),
+        """
+        The choice in dynamics, either continuous = 0 or the delta spike = 1, leads to the choice and number of priors. For the delta solution there is
+        one less parameter choice. The production time (𝝉) is no longer needed and the flow rate q is related with the intial mass concentation M
+        """
+        if dynamics == 0:
+            if priors is None:
+                self.priors = [Loguniform(1,5000),
+                           Normal(800,100),
                            Uniform(0,60),
-                           Uniform(0.0,10),
-                           Uniform(0.0,10),
-                           Uniform(0.0,20),
-                           Uniform(0.0,1)]
+                           Uniform(0,1),
+                           Uniform(0,1),
+                           Uniform(0,50),
+                           Uniform(0.0, 0.02)]
+            else:
+                   assert isinstance(priors, list)
+                   assert len(priors) == 7
+                   self.priors = priors
+        elif dynamics == 1:
+                self.priors = [Uniform(200,50),
+                           Normal(800,100),
+                           Uniform(0,1),
+                           Uniform(0,1),
+                           Uniform(0,50),
+                           Uniform(0.0, 0.02)]
         else:
-            assert isinstance(priors, list)
-            assert len(priors) == 7
-            self.priors = priors
+                 raise ValueError('The concentration choice should be either continuous or delta, please re-choose')
+
 
     def log_likelihood(self, params: np.ndarray):
         """
@@ -155,17 +180,9 @@ class AttractantInferer(inferer):
             return self.ob_dists.logpdf(observed_bias(params, self.r, self.t, self.wound))
         except SquareRootError:
             return -np.inf
+
     def log_prior(self, params: np.ndarray):
         return sum([prior.logpdf(param) for prior, param in zip(self.priors, params)])
-"""
-    def log_prior(self, params: np.ndarray):
-        q,D,tau,r0,k,m,b0=params
-        if 0.0 < q < 80000.0 and 0.0 < D < 5000.0 and 0.0 < tau < 60.0 and 0.0 < r0 < 10 and 0.0 < k < 10 and 0.0< m < 20 and 0.0 < b0 < 1:
-            return 0
-        else:
-            return -np.inf
-"""            
-    
 
 
 

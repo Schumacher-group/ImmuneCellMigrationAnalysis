@@ -33,7 +33,8 @@ def nan_concatenate(arrays: list, axis: int):
         check_is_numpy(array)
 
     shapes = [array.shape for array in arrays]
-    assert all([len(shape) == len(shapes[0]) for shape in shapes]), 'All arrays passed must have the same number of dimensions'
+    assert all(
+        [len(shape) == len(shapes[0]) for shape in shapes]), 'All arrays passed must have the same number of dimensions'
     shapes = np.array(shapes)
     max_dims = shapes.max(0)
 
@@ -51,7 +52,6 @@ def nan_concatenate(arrays: list, axis: int):
 
 
 if __name__ == '__main__':
-
     a = np.zeros((3, 3))
     b = np.zeros((2, 3))
     c = nan_concatenate([a, b], axis=1)

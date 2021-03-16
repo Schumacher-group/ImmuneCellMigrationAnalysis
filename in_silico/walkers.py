@@ -2,10 +2,10 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.abspath('..'))
-from in_silico.sources import Source
-from utils.distributions import Bernoulli, WrappedNormal, TruncatedNormal
-from utils.angles import angle_between
-from utils.exceptions import ArgumentError
+from sources import Source
+from distributions import Bernoulli, WrappedNormal, TruncatedNormal
+from angles import angle_between
+from exceptions import ArgumentError
 
 # use negative y-axis as the reference axis
 reference_axis = np.array([0, -1])
@@ -37,7 +37,7 @@ class BP_Leukocyte(Leukocyte):
 
     def __init__(self,
                  params: np.ndarray,
-                 source: Source,
+                 source: Source,m: float = 0,
                  s: float=0.2) -> None:
         """
         Initialise a class of biased-persistent Leukocytes in an environment with
@@ -64,8 +64,11 @@ class BP_Leukocyte(Leukocyte):
         self.p = p if p != 0 else 0.01
         self.b = b if b != 0 else 0.01
         self.source = source
+        self.m = m
         self.s = s
-        self.step = TruncatedNormal(sig=self.s)
+        self.step = TruncatedNormal(mu = self.m,sig=self.s)
+
+
 
     def walk(self, X0s: np.ndarray, T: int):
 
@@ -103,7 +106,7 @@ if __name__ == '__main__':
 
     import time
     import matplotlib.pyplot as plt
-    from in_silico.sources import PointSource
+    from sources import PointSource
 
     N = 20
     B = BP_Leukocyte(np.array([0.5, 0.8, 0.8]), PointSource(np.array([3, 3])))
@@ -112,6 +115,6 @@ if __name__ == '__main__':
     paths = B.walk(X0s=np.random.uniform(-5, 5, size=(N, 2)), T=100)
     t2 = time.time()
 
-    from utils.plotting import plot_paths
+    from plotting import plot_paths
 
     plot_paths(paths, PointSource(np.array([3, 3])))
