@@ -1,5 +1,6 @@
 import numpy as np
-from utils.checks import check_is_numpy
+from Utilities.checks import check_is_numpy
+
 
 def nan_concatenate(arrays: list, axis: int):
     """

@@ -8,7 +8,7 @@ import time
 
 import sys
 import os
-from utils.plotting import add_pi_ticks
+from Utilities.plotting import add_pi_ticks
 
 sys.path.append(os.path.split(sys.path[0])[0])
 
