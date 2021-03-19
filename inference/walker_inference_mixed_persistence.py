@@ -1,5 +1,3 @@
-import sys
-import os
 import numpy as np
 from Utilities.angles import angle_between
 from in_silico.walkers import reference_axis
@@ -8,6 +6,8 @@ from in_silico.sources import Source
 from inference.base_inference import Inferer
 from Utilities.checks import check_valid_prior
 from Utilities.misc import nan_concatenate
+import sys
+import os
 
 sys.path.append(os.path.abspath('..'))
 
@@ -73,12 +73,12 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
 
     Params:
 
-        paths:     np.array - (T, 2, N) - paths of N walkers walking for T time steps
+        paths:     np.array - (t, 2, n) - paths of n walkers walking for t time steps
 
     Returns:
 
-        alphas:    np.array - (T-1, N): angle taken at each time step
-        betas:     np.array - (T-1, N): direction to source at each time step
+        alphas:    np.array - (t-1, n): angle taken at each time step
+        betas:     np.array - (t-1, n): direction to source at each time step
 
     """
 
@@ -129,7 +129,7 @@ class BiasedPersistentInferer(Inferer):
 
         # perform prior checks
         if priors is None:
-            self.priors = [Uniform(0, 1), Uniform(0, 1), Uniform(0, 1)]
+            self.priors = [Uniform(0, 1), Uniform(0, 1), Uniform(0, 1), Uniform(0, 1), Uniform(0, 1)]
             self.uniform_prior = True
 
         else:
@@ -144,9 +144,9 @@ class BiasedPersistentInferer(Inferer):
         alphas = []
         betas = []
         for path, source in zip(paths, sources):
-            a, beta = get_alphas_betas(path, source)
-            if a.shape != (0, 0) and beta.shape != (0, 0):
-                alphas.append(a)
+            alpha, beta = get_alphas_betas(path, source)
+            if alpha.shape != (0, 0) and beta.shape != (0, 0):
+                alphas.append(alpha)
                 betas.append(beta)
 
         # concatenate them into two big arrays
@@ -195,10 +195,11 @@ class BiasedPersistentInferer(Inferer):
         if (params > 1).any() or (params < 0).any():
             return -np.inf
 
-        weight, p1, bias = params
+        weight, w2, p1, p2, bias = params
 
         sig_b = (-2 * np.log(bias)) ** 0.5
         sig_p1 = (-2 * np.log(p1)) ** 0.5
+        sig_p2 = (-2 * np.log(p2)) ** 0.5
 
         # The probability of observing the first step, given the angle beta0 towards the source
         # Updated to address issues with log(0), if the b or p parameter = 0,
@@ -207,19 +208,18 @@ class BiasedPersistentInferer(Inferer):
         if bias > 0:
             p_0 = WrappedNormal(mu=self.beta0, sig=sig_b).pdf(x=self.alpha0)
             p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
+        # Need to double check that this working
         else:
             p_0 = WrappedNormal(mu=self.beta0, sig=100).pdf(x=self.alpha0)
             p_b = WrappedNormal(mu=self.betas, sig=100).pdf(x=self.alphas)
 
         # persistent probabilities
-        if sig_p1 > 0:
-            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p1).pdf(
-                x=self.alphas)  # + WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
-        else:
-            p_p = WrappedNormal(mu=self.alphas, sig=100).pdf(x=self.alphas)
+
+        p_p1 = WrappedNormal(mu=self.alphas_, sig=sig_p1).pdf(x=self.alphas)
+        p_p2 = WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
 
         # combined probabilities
-        p_t = weight * p_b + (1 - weight) * p_p
+        p_t = weight * p_b + (1 - weight) * (w2 * p_p1 + (1 - w2) * p_p2)
 
         # take logs
         log_p_0 = np.log(p_0)

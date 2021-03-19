@@ -1,18 +1,20 @@
 import sys
-sys.path.append('..')
-
 import numpy as np
 from scipy.stats import multivariate_normal
-from utils.distributions import WrappedNormal, Uniform, Normal, Loguniform
-from inference.base_inference import inferer
+from Utilities.distributions import Uniform, Normal, Loguniform
+from inference.base_inference import Inferer
 from typing import Union
-from utils.exceptions import SquareRootError
-from in_silico.sources import Wound, PointWound, CellsInsideWound, CellsOnWoundMargin
+from Utilities.exceptions import SquareRootError
+from in_silico.sources import Wound, PointWound
+
+sys.path.append('..')
 
 # This is the Leukocyte radius: 15µm
 dr = 15
 
-def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound) -> Union[np.ndarray, float]:
+
+def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound) -> Union[
+     np.ndarray, float]:
     """
     Given a set of AD parameters, this function returns the concentration of bound complexes at radial
     distance r and time t.
@@ -30,30 +32,31 @@ def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array
     correct concentration equation
     """
     if len(params) == 7:
-        q, D, tau, R_0, kappa = params[:5]
-        A = wound.concentration(params, r, t)
+        q, d, tau, r_0, kappa = params[:5]
+        a = wound.concentration(params, r, t)
     else:
-        M,D, R_0, kappa = params[:4]
-        A = wound.concentration_delta(params,r,t)
+        m, d, r_0, kappa = params[:4]
+        a = wound.concentration_delta(params, r, t)
 
-    k = (0.25 * (kappa + R_0 + A) ** 2 - R_0 * A)
+    k = (0.25 * (kappa + r_0 + a) ** 2 - r_0 * a)
 
     if np.array(k < 0).any():
         raise SquareRootError('Value to be square-rooted in complex eqn is less than zero')
 
-    return 0.5 * (kappa + R_0 + A) - k ** 0.5
+    return 0.5 * (kappa + r_0 + a) - k ** 0.5
 
 
-def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound) -> Union[np.ndarray, float]:
+def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound) -> Union[
+     np.ndarray, float]:
     """
     For a set of parameters, calculate the observed bias that would occur
     at a radial distance r and time t for leukocytes of radius dr.
 
     Parameters
     ----------
-    params      a tuple containing q, D, tau, R_0, kappa, m, b_0
+    params      a tuple containing q, d, tau, r_0, kappa, m, b_0
     r           the spatial descriptor - distance from the wound
-    t           the temporal descriptor - when is this occuring
+    t           the temporal descriptor - when is this occurring
 
     Returns
     -------
@@ -62,15 +65,15 @@ def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.a
     This allows the model to choose which production equation is used
     """
     if len(params) == 7:
-        q, D, tau, R_0, kappa, m, b_0 = params
+        q, d, tau, r_0, kappa, m, b_0 = params
     else:
-        M,D, R_0, kappa, m, b_0 = params
+        m0, d, r_0, kappa, m, b_0 = params
     return m * (complexes(params, r - dr, t, wound) - complexes(params, r + dr, t, wound)) + b_0
 
 
-class AttractantInferer(inferer):
+class AttractantInferer(Inferer):
 
-    def __init__(self, ob_readings: dict, wound: Wound, priors: list=None,dynamics:int = 0, t_units='minutes'):
+    def __init__(self, ob_readings: dict, wound: Wound, priors: list = None, dynamics: int = 0, t_units='minutes'):
         """
         Perform inference on observed bias readings to infer the posterior distribution over the
         attractant dynamics parameters {q, D, τ, R0, κ, m, b0} or {M, D, R0, κ, m, b0} depending on which
@@ -99,7 +102,7 @@ class AttractantInferer(inferer):
         R0:     Mmol / µm^2
         kappa:  Mmol / µm^2
         m:      µm^2 / Mmol
-        b0:     unitless
+        b0:     unit less
 
 
         Parameters
@@ -114,7 +117,8 @@ class AttractantInferer(inferer):
 
         self.wound = wound
         self.dynamics = dynamics
-        assert t_units in ['seconds', 'minutes'], 't_units must be either "seconds" or "minutes" but it is {}'.format(t_units)
+        assert t_units in ['seconds', 'minutes'], 't_units must be either "seconds" or "minutes" but it is {}'.format(
+            t_units)
 
         # the total number of readings
         self.TS = len(ob_readings)
@@ -132,36 +136,35 @@ class AttractantInferer(inferer):
         # this is our multivariate Gaussian observed bias distribution
         self.ob_dists = multivariate_normal(mus, sigs ** 2)
 
-
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
         """
-        The choice in dynamics, either continuous = 0 or the delta spike = 1, leads to the choice and number of priors. For the delta solution there is
-        one less parameter choice. The production time (𝝉) is no longer needed and the flow rate q is related with the intial mass concentation M
+        The choice in dynamics, either continuous = 0 or the delta spike = 1, leads to the choice and number of priors. 
+        For the delta solution there is one less parameter choice. The production time (𝝉) is no longer needed and 
+        the flow rate q is related with the initial mass concentration m0
         """
         if dynamics == 0:
             if priors is None:
-                self.priors = [Loguniform(1,5000),
-                           Normal(800,100),
-                           Uniform(0,60),
-                           Uniform(0,1),
-                           Uniform(0,1),
-                           Uniform(0,50),
-                           Uniform(0.0, 0.02)]
+                self.priors = [Loguniform(1, 5000),
+                               Normal(800, 100),
+                               Uniform(0, 60),
+                               Uniform(0, 1),
+                               Uniform(0, 1),
+                               Uniform(0, 50),
+                               Uniform(0.0, 0.02)]
             else:
-                   assert isinstance(priors, list)
-                   assert len(priors) == 7
-                   self.priors = priors
+                assert isinstance(priors, list)
+                assert len(priors) == 7
+                self.priors = priors
         elif dynamics == 1:
-                self.priors = [Uniform(200,50),
-                           Normal(800,100),
-                           Uniform(0,1),
-                           Uniform(0,1),
-                           Uniform(0,50),
+            self.priors = [Uniform(200, 50),
+                           Normal(800, 100),
+                           Uniform(0, 1),
+                           Uniform(0, 1),
+                           Uniform(0, 50),
                            Uniform(0.0, 0.02)]
         else:
-                 raise ValueError('The concentration choice should be either continuous or delta, please re-choose')
-
+            raise ValueError('The concentration choice should be either continuous or delta, please re-choose')
 
     def log_likelihood(self, params: np.ndarray):
         """
@@ -185,11 +188,8 @@ class AttractantInferer(inferer):
         return sum([prior.logpdf(param) for prior, param in zip(self.priors, params)])
 
 
-
-
 if __name__ == '__main__':
-
-    from utils.plotting import plot_AD_param_dist
+    from Utilities.plotting import plot_AD_param_dist
 
     # TEST
 
