@@ -1,4 +1,7 @@
 import sys
+import os
+sys.path.append(os.path.abspath('../'))
+
 import numpy as np
 from scipy.stats import multivariate_normal
 from Utilities.distributions import Uniform, Normal, Loguniform
@@ -7,7 +10,7 @@ from typing import Union
 from Utilities.exceptions import SquareRootError
 from in_silico.sources import Wound, PointWound
 
-sys.path.append('..')
+
 
 # This is the Leukocyte radius: 15µm
 dr = 15
@@ -145,9 +148,9 @@ class AttractantInferer(Inferer):
         """
         if dynamics == 0:
             if priors is None:
-                self.priors = [Loguniform(1, 5000),
-                               Normal(800, 100),
-                               Uniform(0, 60),
+                self.priors = [Loguniform(1, 1000),
+                               Uniform(10, 1000),
+                               Uniform(0, 65),
                                Uniform(0, 1),
                                Uniform(0, 1),
                                Uniform(0, 50),

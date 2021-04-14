@@ -1,5 +1,7 @@
 import sys
 import os
+sys.path.append(os.path.abspath('../'))
+
 import numpy as np
 from Utilities.angles import angle_between
 from in_silico.walkers import reference_axis
@@ -9,7 +11,6 @@ from inference.base_inference import Inferer
 from Utilities.checks import check_valid_prior
 from Utilities.misc import nan_concatenate
 
-sys.path.append(os.path.abspath('..'))
 
 
 def prepare_paths(paths: list, min_t: int = 1, include_t=True) -> np.ndarray:
