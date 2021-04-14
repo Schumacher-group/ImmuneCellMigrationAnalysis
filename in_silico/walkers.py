@@ -1,11 +1,8 @@
 import numpy as np
-import sys
-import os
-sys.path.append(os.path.abspath('..'))
-from sources import Source
-from distributions import Bernoulli, WrappedNormal, TruncatedNormal
-from angles import angle_between
-from exceptions import ArgumentError
+from in_silico.sources import Source
+from Utilities.distributions import Bernoulli, WrappedNormal, TruncatedNormal
+from Utilities.angles import angle_between
+from Utilities.exceptions import ArgumentError
 
 # use negative y-axis as the reference axis
 reference_axis = np.array([0, -1])
@@ -37,7 +34,7 @@ class BP_Leukocyte(Leukocyte):
 
     def __init__(self,
                  params: np.ndarray,
-                 source: Source,m: float = 0,
+                 source: Source,
                  s: float=0.2) -> None:
         """
         Initialise a class of biased-persistent Leukocytes in an environment with
@@ -64,11 +61,8 @@ class BP_Leukocyte(Leukocyte):
         self.p = p if p != 0 else 0.01
         self.b = b if b != 0 else 0.01
         self.source = source
-        self.m = m
         self.s = s
-        self.step = TruncatedNormal(mu = self.m,sig=self.s)
-
-
+        self.step = TruncatedNormal(mu=0,sig=self.s)
 
     def walk(self, X0s: np.ndarray, T: int):
 
@@ -106,7 +100,7 @@ if __name__ == '__main__':
 
     import time
     import matplotlib.pyplot as plt
-    from sources import PointSource
+    from in_silico.sources import PointSource
 
     N = 20
     B = BP_Leukocyte(np.array([0.5, 0.8, 0.8]), PointSource(np.array([3, 3])))
