@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.abspath('../'))
 
 import numpy as np
+import pandas as pd
 from Utilities.angles import angle_between
 from in_silico.walkers import reference_axis
 from Utilities.distributions import WrappedNormal, Uniform
@@ -94,6 +95,31 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
     betas = np.apply_along_axis(lambda d: angle_between(reference_axis, d), 1, directions_to_source)[:-1, :]
 
     return alphas, betas
+
+
+def spatial_temporal_binning(dataframe: pd.DataFrame):
+    def space_binning(trajectory):
+        s70 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] <= 70)]
+        s140 = trajectory[(trajectory['r'] >= 70) & (trajectory['r'] <= 140)]
+        s250 = trajectory[(trajectory['r'] >= 140) & (trajectory['r'] <= 250)]
+        s360 = trajectory[(trajectory['r'] >= 250) & (trajectory['r'] <= 360)]
+        s500 = trajectory[(trajectory['r'] >= 360) & (trajectory['r'] <= 500)]
+        return [s70, s140, s250, s360, s500]
+
+    def time_binning(space_bin):
+        t20 = space_bin[(space_bin['t'] >= 0) & (space_bin['t'] <= (20 * 60))]
+        t35 = space_bin[(space_bin['t'] >= (20 * 60)) & (space_bin['t'] <= (35 * 60))]
+        t50 = space_bin[(space_bin['t'] >= (35 * 60)) & (space_bin['t'] <= (50 * 60))]
+        t65 = space_bin[(space_bin['t'] >= (50 * 60)) & (space_bin['t'] <= (65 * 60))]
+        t90 = space_bin[(space_bin['t'] >= (65 * 60)) & (space_bin['t'] <= (90 * 60))]
+        t125 = space_bin[(space_bin['t'] >= (90 * 60)) & (space_bin['t'] <= (125 * 60))]
+
+        return [t20, t35, t50, t65, t90, t125]
+
+    distance = space_binning(dataframe)
+    time_space_bins = list(map(time_binning, distance))
+
+    return time_space_bins
 
 
 class BiasedPersistentInferer(Inferer):
