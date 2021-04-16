@@ -148,7 +148,7 @@ class AttractantInferer(Inferer):
         """
         if dynamics == 0:
             if priors is None:
-                self.priors = [Loguniform(1, 1000),
+                self.priors = [Uniform(1, 1000),
                                Uniform(10, 1000),
                                Uniform(0, 65),
                                Uniform(0, 1),

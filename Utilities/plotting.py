@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from fractions import Fraction
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
@@ -312,4 +313,21 @@ def plot_AD_param_dist(dist: np.ndarray, priors: list=None):
             priors[j].plot(ax=axes[j], color=cols[j])
 
     plt.tight_layout()
+    plt.show()
+
+
+def plot_find_wound_location(dataframe: pd.DataFrame):
+
+    trajectory_group = dataframe.groupby('Track_ID')
+    final_data = (pd.concat([trajectory_group.tail(1)]).drop_duplicates().sort_values('Track_ID').reset_index(drop=True))
+    final_data['x'] = final_data['x'].astype(float)
+    final_data['y'] = final_data['y'].astype(float)
+    x = final_data['x'].tolist()
+    y = final_data['y'].tolist()
+
+    plt.hist2d(x, y)
+    plt.xlabel("x")
+    plt.ylabel("y")
+
+    plt.title("Final t distribution of tracks")
     plt.show()

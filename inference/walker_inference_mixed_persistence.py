@@ -195,9 +195,9 @@ class BiasedPersistentInferer(Inferer):
         if (params > 1).any() or (params < 0).any():
             return -np.inf
 
-        weight, w2, p1, p2, bias = params
+        w1, w2, p1, p2, b = params
 
-        sig_b = (-2 * np.log(bias)) ** 0.5
+        sig_b = (-2 * np.log(b)) ** 0.5
         sig_p1 = (-2 * np.log(p1)) ** 0.5
         sig_p2 = (-2 * np.log(p2)) ** 0.5
 
@@ -205,13 +205,13 @@ class BiasedPersistentInferer(Inferer):
         # Updated to address issues with log(0), if the b or p parameter = 0,
         # the distribution can be assumed to be Uniform.
 
-        if bias > 0:
-            p_0 = WrappedNormal(mu=self.beta0, sig=sig_b).pdf(x=self.alpha0)
-            p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
+        #if bias > 0:
+        p_0 = WrappedNormal(mu=self.beta0, sig=sig_b).pdf(x=self.alpha0)
+        p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
         # Need to double check that this working
-        else:
-            p_0 = WrappedNormal(mu=self.beta0, sig=100).pdf(x=self.alpha0)
-            p_b = WrappedNormal(mu=self.betas, sig=100).pdf(x=self.alphas)
+        #else:
+         #   p_0 = WrappedNormal(mu=self.beta0, sig=100).pdf(x=self.alpha0)
+         #   p_b = WrappedNormal(mu=self.betas, sig=100).pdf(x=self.alphas)
 
         # persistent probabilities
 
@@ -219,7 +219,7 @@ class BiasedPersistentInferer(Inferer):
         p_p2 = WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
 
         # combined probabilities
-        p_t = weight * p_b + (1 - weight) * (w2 * p_p1 + (1 - w2) * p_p2)
+        p_t = w1 * p_b + (1 - w1) * (w2 * p_p1 + (1 - w2) * p_p2)
 
         # take logs
         log_p_0 = np.log(p_0)
