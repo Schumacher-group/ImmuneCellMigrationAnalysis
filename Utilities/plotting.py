@@ -9,10 +9,11 @@ import time
 from in_silico.sources import Source
 from tqdm import tqdm
 
-def make_gif(array: np.ndarray, save_as: str, delay: int=10,
-             time_first: bool=True, v_bounds: tuple=(None, None),
-             dpi: int=None, cells: list=None, paths: list=None,
-             extent: list=None, origin: str=None):
+
+def make_gif(array: np.ndarray, save_as: str, delay: int = 10,
+             time_first: bool = True, v_bounds: tuple = (None, None),
+             dpi: int = None, cells: list = None, paths: list = None,
+             extent: list = None, origin: str = None):
     """
 
     Make a gif file from a numpy array, using Matplotlib imshow over the x-y
@@ -84,7 +85,8 @@ def make_gif(array: np.ndarray, save_as: str, delay: int=10,
             for path in paths:
                 if path.shape[0] > 1:
                     path_to_plot = path[path[:, 0] < t]
-                    plt.plot(path_to_plot[:, 1], path_to_plot[:, 2], color=colors[i % len(colors)], linewidth=1, alpha=0.75)
+                    plt.plot(path_to_plot[:, 1], path_to_plot[:, 2], color=colors[i % len(colors)], linewidth=1,
+                             alpha=0.75)
                     i += 1
             # plt.show()
 
@@ -158,13 +160,12 @@ def add_pi_ticks(ax, between=(-np.pi, np.pi), step=np.pi / 4, axis='x'):
 
 
 def plot_wpb_dist(params: np.array,
-                  title: str=None,
-                  add_kde: bool=False,
-                  y_max: float=None,
-                  save_as: str=None,
+                  title: str = None,
+                  add_kde: bool = False,
+                  y_max: float = None,
+                  save_as: str = None,
                   ax=None,
                   legend=True):
-
     cols = {'w': '#1f77b4', 'p': '#ff7f0e', 'b': '#2ca02c'}
 
     if ax is None:
@@ -175,11 +176,11 @@ def plot_wpb_dist(params: np.array,
 
     for i, typ in enumerate(['w', 'p', 'b']):
         ax.hist(params[:, i],
-                 label='${}$ = {:.2f} $\pm$ {:.2f}'.format(typ, means[i], stds[i]),
-                 bins=100,
-                 alpha=0.6,
-                 density=True,
-                 color=cols[typ])
+                label='${}$ = {:.2f} $\pm$ {:.2f}'.format(typ, means[i], stds[i]),
+                bins=100,
+                alpha=0.6,
+                density=True,
+                color=cols[typ])
 
     if add_kde:
         y_w = gaussian_kde(params[:, 0])
@@ -208,8 +209,8 @@ def plot_wpb_dist(params: np.array,
 
     plt.show()
 
-def set_source():
 
+def set_source():
     import skimage
     from matplotlib.patches import Circle
 
@@ -255,7 +256,6 @@ def set_source():
 
 
 def plot_paths(paths: np.ndarray, source: Source):
-
     source_x, source_y = source.position
     T, _, N = paths.shape
 
@@ -284,11 +284,10 @@ def plot_paths(paths: np.ndarray, source: Source):
     for n in range(N):
         plt.plot(paths[:, 0, n], paths[:, 1, n], linewidth=0.5)
 
-
     plt.show()
 
 
-def plot_AD_param_dist(dist: np.ndarray, priors: list=None):
+def plot_AD_param_dist(dist: np.ndarray, priors: list = None):
     """
     Plot the output distibution of the attractant dynamics parameters
 
@@ -317,9 +316,9 @@ def plot_AD_param_dist(dist: np.ndarray, priors: list=None):
 
 
 def plot_find_wound_location(dataframe: pd.DataFrame):
-
     trajectory_group = dataframe.groupby('Track_ID')
-    final_data = (pd.concat([trajectory_group.tail(1)]).drop_duplicates().sort_values('Track_ID').reset_index(drop=True))
+    final_data = (
+        pd.concat([trajectory_group.tail(1)]).drop_duplicates().sort_values('Track_ID').reset_index(drop=True))
     final_data['x'] = final_data['x'].astype(float)
     final_data['y'] = final_data['y'].astype(float)
     x = final_data['x'].tolist()
@@ -330,4 +329,67 @@ def plot_find_wound_location(dataframe: pd.DataFrame):
     plt.ylabel("y")
 
     plt.title("Final t distribution of tracks")
+    plt.show()
+
+
+# Plot of temporal bins of the trajectory data
+def plotxy_time_bins(dataframe: pd.DataFrame):
+    trajectory = dataframe
+    t20 = trajectory[(trajectory['t'] >= 0) & (trajectory['t'] <= (20 * 60))]
+    t35 = trajectory[(trajectory['t'] >= (20 * 60)) & (trajectory['t'] <= (35 * 60))]
+    t50 = trajectory[(trajectory['t'] >= (35 * 60)) & (trajectory['t'] <= (50 * 60))]
+    t65 = trajectory[(trajectory['t'] >= (50 * 60)) & (trajectory['t'] <= (65 * 60))]
+    t90 = trajectory[(trajectory['t'] >= (65 * 60)) & (trajectory['t'] <= (90 * 60))]
+    t125 = trajectory[(trajectory['t'] >= (90 * 60)) & (trajectory['t'] <= (125 * 60))]
+
+    for ID, tracks in t125.groupby('Track_ID'):
+        t125, = plt.plot(tracks['x'], tracks['y'], color='xkcd:rust', lw=1)
+    for ID, tracks in t90.groupby('Track_ID'):
+        t90, = plt.plot(tracks['x'], tracks['y'], color='xkcd:pine green', lw=1)
+    for ID, tracks in t65.groupby('Track_ID'):
+        t65, = plt.plot(tracks['x'], tracks['y'], color='xkcd:salmon', lw=1)
+    for ID, tracks in t50.groupby('Track_ID'):
+        t50, = plt.plot(tracks['x'], tracks['y'], color='xkcd:sky blue', lw=1)
+    for ID, tracks in t35.groupby('Track_ID'):
+        t35, = plt.plot(tracks['x'], tracks['y'], color='xkcd:sage', lw=1)
+    for ID, tracks in t20.groupby('Track_ID'):
+        t20, = plt.plot(tracks['x'], tracks['y'], color='xkcd:cobalt', lw=1)
+    plt.legend(handles=[t125, t90, t65, t50, t35, t20],
+               labels=["90 - 125 mins", "65 - 90 mins",
+                       "50 - 65 mins", "35 - 50 mins",
+                       "20 - 35 mins ", "0 - 20 mins"], title="Time Bins", loc=[1, 0.5])
+    plt.xlabel("X-distance ($\\mu m$")
+    plt.ylabel("Y-distance ($\\mu m$)")
+    plt.title("Time binning for immune cell trajectories")
+    plt.figure(figsize=(8, 6), dpi=80)
+    plt.tight_layout()
+    plt.show()
+
+
+def plotxy_space_bins(dataframe: pd.DataFrame):
+    trajectory = dataframe
+    s25 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] <= 70)]
+    s50 = trajectory[(trajectory['r'] >= 70) & (trajectory['r'] <= 140)]
+    s75 = trajectory[(trajectory['r'] >= 140) & (trajectory['r'] <= 250)]
+    s100 = trajectory[(trajectory['r'] >= 250) & (trajectory['r'] <= 360)]
+    s125 = trajectory[(trajectory['r'] >= 360) & (trajectory['r'] <= 500)]
+
+    for ID, tracks in s125.groupby('Track_ID'):
+        s125, = plt.plot(tracks['x'], tracks['y'], color='xkcd:rust', lw=1)
+    for ID, tracks in s100.groupby('Track_ID'):
+        s100, = plt.plot(tracks['x'], tracks['y'], color='xkcd:pine green', lw=1)
+    for ID, tracks in s75.groupby('Track_ID'):
+        s75, = plt.plot(tracks['x'], tracks['y'], color='xkcd:salmon', lw=1)
+    for ID, tracks in s50.groupby('Track_ID'):
+        s50, = plt.plot(tracks['x'], tracks['y'], color='xkcd:sky blue', lw=1)
+    for ID, tracks in s25.groupby('Track_ID'):
+        s25, = plt.plot(tracks['x'], tracks['y'], color='xkcd:sage', lw=1)
+    plt.legend(handles=[s125, s100, s75, s50, s25],
+               labels=["360 - 500$\\mu m$", "250 - 360$\\mu m$",
+                       "140 - 250$\\mu m$", "70 - 140$\\mu m$",
+                       "0 - 70$\\mu m$"], title="Spatial Bins", loc=[1, 0.5])
+    plt.xlabel("X-distance ($\\mu m$)")
+    plt.ylabel("Y-distance ($\\mu m$)")
+    plt.title("Spatial binning for immune cell trajectories")
+    plt.tight_layout()
     plt.show()
