@@ -8,6 +8,8 @@ import os
 import time
 from in_silico.sources import Source
 from tqdm import tqdm
+from inference.attractant_inference import observed_bias
+
 
 
 def make_gif(array: np.ndarray, save_as: str, delay: int = 10,
@@ -335,7 +337,7 @@ def plot_find_wound_location(dataframe: pd.DataFrame):
 # Plot of temporal bins of the trajectory data
 def plotxy_time_bins(dataframe: pd.DataFrame):
     trajectory = dataframe
-    t20 = trajectory[(trajectory['t'] >= 0) & (trajectory['t'] <= (20 * 60))]
+    t20 = trajectory[(trajectory['t'] >= (0*60) )& (trajectory['t'] <= (20 * 60))]
     t35 = trajectory[(trajectory['t'] >= (20 * 60)) & (trajectory['t'] <= (35 * 60))]
     t50 = trajectory[(trajectory['t'] >= (35 * 60)) & (trajectory['t'] <= (50 * 60))]
     t65 = trajectory[(trajectory['t'] >= (50 * 60)) & (trajectory['t'] <= (65 * 60))]
@@ -357,7 +359,7 @@ def plotxy_time_bins(dataframe: pd.DataFrame):
     plt.legend(handles=[t125, t90, t65, t50, t35, t20],
                labels=["90 - 125 mins", "65 - 90 mins",
                        "50 - 65 mins", "35 - 50 mins",
-                       "20 - 35 mins ", "0 - 20 mins"], title="Time Bins", loc=[1, 0.5])
+                       "20 - 35 mins ", "15 - 20 mins"], title="Time Bins", loc=[1, 0.5])
     plt.xlabel("X-distance ($\\mu m$")
     plt.ylabel("Y-distance ($\\mu m$)")
     plt.title("Time binning for immune cell trajectories")
@@ -393,3 +395,43 @@ def plotxy_space_bins(dataframe: pd.DataFrame):
     plt.title("Spatial binning for immune cell trajectories")
     plt.tight_layout()
     plt.show()
+
+
+def plot_observed_bias(parameters, wound):
+    params = np.array(parameters)
+    fig, axes = plt.subplots(ncols=1, nrows=5, sharex=True)
+
+    # instantiate a point wound
+
+    # where to measure observed bias
+    r_points = np.array([25, 50, 75, 100, 125, 150, 175, 200, 225, 250])  # , 175, 200, 225, 250
+    r = np.linspace(25, 250, 100)
+    t = np.array([10, 30, 50, 80, 120])
+
+    for ax, p in zip(axes, t):
+        ax.set_ylabel('$t={}$'.format(p), rotation=0, size='large', labelpad=35)
+
+    # plot the points
+    lines = []
+    scatters = []
+    for i, tt in enumerate(t):
+        col = plt.rcParams['axes.prop_cycle'].by_key()['color'][i]
+        lines.append(axes[i].plot(r, observed_bias(params, r, tt, wound), color=col, linewidth=1)[0])
+        scatters.append(
+            axes[i].plot(r_points, observed_bias(params, r_points, tt, wound), color=col, marker='o', linewidth=0,
+                         markersize=4)[0])
+        axes[i].set_ylim(0, 0.3)
+
+    axes[0].set_title('A point wound: observed bias as a function of distance')
+    axes[-1].set_xlabel('Distance, microns')
+    plt.tight_layout()
+
+    ob_readings = {}
+    for T, ob in zip(t, scatters):
+        mus = ob.get_ydata()
+        rs = ob.get_xdata()
+        for r, mu in zip(rs, mus):
+            ob_readings[(r, T)] = (mu, 0.02)
+
+    return fig, ob_readings
+
