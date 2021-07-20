@@ -8,7 +8,6 @@ import os
 import time
 from in_silico.sources import Source
 from tqdm import tqdm
-from inference.attractant_inference import observed_bias
 
 
 
@@ -396,7 +395,7 @@ def plotxy_space_bins(dataframe: pd.DataFrame):
     plt.tight_layout()
     plt.show()
 
-
+"""
 def plot_observed_bias(parameters, wound):
     params = np.array(parameters)
     fig, axes = plt.subplots(ncols=1, nrows=5, sharex=True)
@@ -434,4 +433,4 @@ def plot_observed_bias(parameters, wound):
             ob_readings[(r, T)] = (mu, 0.02)
 
     return fig, ob_readings
-
+"""
