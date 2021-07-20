@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath('../'))
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from Utilities.distributions import Uniform, Normal, Loguniform
+from Utilities.distributions import Uniform, Normal
 from inference.base_inference import Inferer
 from typing import Union
 from Utilities.exceptions import SquareRootError
@@ -16,30 +16,30 @@ from in_silico.sources import Wound, PointWound
 dr = 15
 
 
-def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound) -> Union[
+def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound, model: str) -> Union[
      np.ndarray, float]:
     """
     Given a set of AD parameters, this function returns the concentration of bound complexes at radial
     distance r and time t.
-
     Parameters
     ----------
     params  A numpy array holding at least [tau, q, D, kappa, R_0] in that order
     r       the radial distance from the origin. Can be float or array
     t       time
-
     Returns
     -------
     C       The concentration of complexes
     This allows the model to choose which production equation is used, and passes the argument to the
     correct concentration equation
     """
-    if len(params) == 7:
+    if model == "production":
         q, d, tau, r_0, kappa = params[:5]
         a = wound.concentration(params, r, t)
-    else:
+    elif model == "delta":
         m, d, r_0, kappa = params[:4]
         a = wound.concentration_delta(params, r, t)
+    else:
+        return "Incorrect model type chosen, please choose 'delta' or 'production'"
 
     k = (0.25 * (kappa + r_0 + a) ** 2 - r_0 * a)
 
@@ -49,56 +49,48 @@ def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array
     return 0.5 * (kappa + r_0 + a) - k ** 0.5
 
 
-def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound) -> Union[
+def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array, float], wound: Wound, model: str) -> Union[
      np.ndarray, float]:
     """
     For a set of parameters, calculate the observed bias that would occur
     at a radial distance r and time t for leukocytes of radius dr.
-
     Parameters
     ----------
     params      a tuple containing q, d, tau, r_0, kappa, m, b_0
     r           the spatial descriptor - distance from the wound
     t           the temporal descriptor - when is this occurring
-
     Returns
     -------
     The observed bias
-
     This allows the model to choose which production equation is used
     """
-    if len(params) == 7:
+    if model == "production":
         q, d, tau, r_0, kappa, m, b_0 = params
-    else:
+    elif model == "delta":
         m0, d, r_0, kappa, m, b_0 = params
-    return m * (complexes(params, r - dr, t, wound) - complexes(params, r + dr, t, wound)) + b_0
+    else:
+        return "Incorrect model type chosen, please choose 'delta' or 'production'"
+
+    return m * (complexes(params, r - dr, t, wound, model) - complexes(params, r + dr, t, wound, model)) + b_0
 
 
 class AttractantInferer(Inferer):
 
-    def __init__(self, ob_readings: dict, wound: Wound, priors: list = None, dynamics: int = 0, t_units='minutes'):
+    def __init__(self, ob_readings: dict, wound: Wound, priors: list = None, model: str = "production", t_units='minutes'):
         """
         Perform inference on observed bias readings to infer the posterior distribution over the
         attractant dynamics parameters {q, D, τ, R0, κ, m, b0} or {M, D, R0, κ, m, b0} depending on which
         production equation is chosen.
-
         A dictionary specifying the observed bias readings must be provided, along with a certain
         instantiated wound (which can be a PointWound, a CellsOnWoundMargin or CellsInsideWound) .
-
         The observed bias readings should be a dictionary with elements of the following form:
-
         {(r1, t1): (mu1, sig1), (r2, t2): (mu2, sig2) ... }
-
         r and t specify the spatial and temporal location where the observed bias has been measured,
         (this could be the mid-point of their respective bins), and mu and sig represent the mean and
         standard deviation of the posterior of the observed bias at this location.
-
         DISTANCES SHOULD BE MEASURED IN MICRONS
-
         time can be measured in minutes or seconds: specify this with the t_units argument.
-
         The parameters are measured in the following units:
-
         q:      Mmol / min
         D:      µm^2 / min
         τ:      min
@@ -106,8 +98,6 @@ class AttractantInferer(Inferer):
         kappa:  Mmol / µm^2
         m:      µm^2 / Mmol
         b0:     unit less
-
-
         Parameters
         ----------
         ob_readings     The observed bias readings
@@ -119,7 +109,7 @@ class AttractantInferer(Inferer):
         super().__init__()
 
         self.wound = wound
-        self.dynamics = dynamics
+        self.model = model
         assert t_units in ['seconds', 'minutes'], 't_units must be either "seconds" or "minutes" but it is {}'.format(
             t_units)
 
@@ -146,7 +136,7 @@ class AttractantInferer(Inferer):
         For the delta solution there is one less parameter choice. The production time (𝝉) is no longer needed and 
         the flow rate q is related with the initial mass concentration m0
         """
-        if dynamics == 0:
+        if model == "production":
             if priors is None:
                 self.priors = [Uniform(1, 1000),
                                Uniform(10, 1000),
@@ -159,7 +149,7 @@ class AttractantInferer(Inferer):
                 assert isinstance(priors, list)
                 assert len(priors) == 7
                 self.priors = priors
-        elif dynamics == 1:
+        elif model == "delta":
             self.priors = [Uniform(200, 50),
                            Normal(800, 100),
                            Uniform(0, 1),
@@ -173,17 +163,15 @@ class AttractantInferer(Inferer):
         """
         For a set of parameters, calculate the log-likelihood of these
         parameters
-
         Parameters
         ----------
         params      a tuple containing q, D, tau, R_0, kappa, m, b_0
-
         Returns
         -------
         The log likelihood
         """
         try:
-            return self.ob_dists.logpdf(observed_bias(params, self.r, self.t, self.wound))
+            return self.ob_dists.logpdf(observed_bias(params, self.r, self.t, self.wound, self.model))
         except SquareRootError:
             return -np.inf
 
