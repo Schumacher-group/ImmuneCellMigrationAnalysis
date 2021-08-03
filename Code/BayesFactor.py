@@ -20,9 +20,9 @@ def BayesFactor(sampler1, sampler2, n_discards):
     HME2 = HME(sampler2, n_discards)
     BF = HME1/HME2
     if BF > 1:
-        return print(f"The support for model 1 is {BF}")
+        return print(f"The Bayes Factor is {BF}, supporting model 1")
     else:
-        return print(f"The support for model 2 is {BF}")
+        return print(f"The Bayes Factor is {BF}, supporting model 2")
 
 
 def HME(sampler, n_discards):
