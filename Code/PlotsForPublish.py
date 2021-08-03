@@ -66,14 +66,14 @@ def plot_posterior(sampler, variables, num_vars, name, save_fig=False, **kwargs)
     plt.show()
 
 
-def plot_posterior_chains(sampler, params, name, save_fig=False, **kwargs):
-    fig, axes = plt.subplots(nrows=1, ncols=len(params), figsize=(12, 5), sharex='col')
+def plot_posterior_chains(sampler, params, name,n_discards, save_fig=False, **kwargs):
+    samples = sampler[0].get_chain(flat = True, discard = n_discards)
+    fig, axes = plt.subplots(nrows=len(params), ncols=1, figsize=(12, 5), sharex='col')
     cols = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     for j in range(len(params)):
         axes[j].set_title(params[j])
-        axes[j].set_yticks([])
-        axes[j].plot(sampler[:, j], color=cols[j])
+        axes[j].plot(samples[:, j], color=cols[j])
 
     plt.tight_layout()
     if save_fig == True:
