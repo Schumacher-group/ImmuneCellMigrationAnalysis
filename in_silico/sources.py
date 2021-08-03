@@ -412,7 +412,7 @@ def concentration_delta(params: np.ndarray, r: Union[np.ndarray, float], t: Unio
     Parameters =
     =============
     params = {
-    M = Initial mass concentration
+    M = Initial mass concentration (mol)
     D = Diffusion coefficient
     }: must be passed as an array
     t = time: can be either a float or an array

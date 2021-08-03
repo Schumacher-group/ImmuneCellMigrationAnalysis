@@ -33,7 +33,7 @@ class Inferer:
         sampler = emcee.EnsembleSampler(n_walkers, n_dim, l_p)
         print("Running sampler: ")
         pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
-        return sampler, pos, prob, state, l_like
+        return sampler, pos, prob, state
 
     # This implements the Metropolis-Hastings Monte Carlo method
     def mhinfer(self, n_steps: int, burn_in: int, seed: int = 0,

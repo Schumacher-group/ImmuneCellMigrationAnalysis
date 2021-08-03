@@ -14,14 +14,15 @@ Track_ID|Position_x|Position_y|Time|Distance from wound (radius)|
 The data can then be binned into different spatial and temporal bins, and the model can be run on each of these bins
 """
 
-import os
-import sys
-sys.path.append(os.path.abspath('..'))
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from datetime import datetime
 
+data_dir = Path('../data')
 
+def filelocation(file_number):
+    return data_dir/f'ImageJcsvs/Control_{file_number}_new.csv'
 # Note need to make this generic so csv_file can take either control or mutant as a parameter
 def csv_to_dataframe(file_number):
     """
@@ -34,7 +35,7 @@ def csv_to_dataframe(file_number):
     -------
     Panda dataframe
     """
-    csv_file = f'../data/ImageJcsvs/Control_{file_number}_new.csv'
+    csv_file = filelocation(file_number)
     dataframe_from_file = pd.read_csv(csv_file, header=0)
     return dataframe_from_file
 
@@ -43,7 +44,7 @@ def reformat_file(dataframe, xw, yw, loc):
     """
     reformat_file takes in the new dataframe created from the csv and the x-y wound location and reshapes the dataframe
     to clean up the column labels and add a new column called 'r' which holds the radial distance from the wound.
-    Parameters
+    Parameters (add types)
     ----------
     dataframe
     loc
@@ -66,8 +67,7 @@ def reformat_file(dataframe, xw, yw, loc):
     reshaped_dataframe['y'] = reshaped_dataframe['y'] - yw
     reshaped_dataframe['r'] = (lambda x, y: np.sqrt(x ** 2 + y ** 2))(reshaped_dataframe['x'], reshaped_dataframe['y'])
     reshaped_dataframe['trackID'] = reshaped_dataframe['trackID'].astype(str)
-    reshaped_dataframe.trackID = reshaped_dataframe.trackID + "{}".format(
-        loc)  # creates a label for the tracks to be organised by, only needed if there are multiple files to run on
+    reshaped_dataframe.trackID = reshaped_dataframe.trackID + f"{loc}"  # creates a label for the tracks to be organised by, only needed if there are multiple files to run on
 
     return reshaped_dataframe
 
@@ -83,7 +83,7 @@ def wound_locations(control=True):
     Returns
     -------
     either:
-    x_wound_control,y_wound_control : wound_location for control
+    x_wound_control,y_wound_control : wound_location for control in microns
     x_wound_mutant,y_wound_mutant : wound_location for mutant
     """
     if control:
@@ -113,15 +113,17 @@ def concatenated_dataframes(num_files, control=True):
     Concatenated dataframe with all files correctly formatted
     """
     wound_xy = wound_locations(control)
-    dataframes_list = [csv_to_dataframe(i+1) for i in range(num_files)]
-    reformat_dataframes_list = [reformat_file(dataframes_list[i], wound_xy[0][i], wound_xy[1][0], chr(ord('@') + (i + 1))) for i in range(num_files)]
-    return reformat_dataframes_list  # pd.concat(dataframes_list)
+    reformat_dataframes_list = [
+        reformat_file(csv_to_dataframe(i + 1), wound_xy[0][i], wound_xy[1][0], chr(ord('@') + (i + 1))) for i in
+        range(num_files)]
+    return pd.concat(reformat_dataframes_list)  # pd.concat(dataframes_list)
 
 
 trajectory = concatenated_dataframes(7)
 date = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
-import pickle
-with open(f"../data/Trajectory_dataframes/{date}_control", "wb") as fp:   #Pickling
-    pickle.dump(trajectory, fp)
 
+import pickle  # Left import pickle here to remind myself that the below statement outputs a pickled dataframe
+
+with open(f"../data/Trajectory_dataframes/{date}_control", "wb") as fp:  # Pickling
+    pickle.dump(trajectory, fp)
 

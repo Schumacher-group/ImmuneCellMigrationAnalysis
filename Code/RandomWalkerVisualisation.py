@@ -16,7 +16,7 @@ Time = ["Time = 5 mins","Time = 15 mins","Time = 30 mins","Time =  50 mins","Tim
 
 # Load the posterior numpy arrays
 def loadData(i, j):
-    WT = np.load('/Users/danieltudor/Documents/Wood group/ImmuneCellMigrationAnalysis/data/WalkerData/WeaversData/WeaversL1{}{}.npy'.format(i,j), allow_pickle=True)
+    WT = np.load(f'/Users/danieltudor/Documents/Wood group/ImmuneCellMigrationAnalysis/data/WalkerData/WildType_new{i}{j}.npy', allow_pickle=True)
     samplerWT = WT[0]
     WildTypeChain = samplerWT.get_chain(discard=250,thin = 2,flat=True)
     return WildTypeChain

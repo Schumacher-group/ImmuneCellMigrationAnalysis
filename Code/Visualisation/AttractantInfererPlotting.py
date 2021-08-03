@@ -4,25 +4,33 @@
 import os
 import sys
 sys.path.append(os.path.abspath('..'))
-from inference.attractant_inference import AttractantInferer
-from in_silico.sources import CellsOnWoundMargin, PointWound, CellsInsideWound
+
+
 import numpy as np
 import matplotlib.pyplot as plt
-
-EnsembleOut = np.load('../data/AttractantInferenceEnsembleWT.npy',allow_pickle=True)
-MHOut = np.load('../data/AttractantInferenceMHWT.npy',allow_pickle=True)
+from inference.attractant_inference import AttractantInferer
+from in_silico.sources import PointWound
+import numpy as np
+EnsembleOut = np.load('/Users/danieltudor/Documents/GitHub/ImmuneCellMigrationAnalysis/data/Emcee_posterior_chain_control_SMBData.npy',allow_pickle=True)
+#MHOut = np.load('../data/AttractantInferenceMHWT.npy',allow_pickle=True)
 # Needed to output emcee parameters
 sampler = EnsembleOut[0]
-samples = sampler.flatchain()
+samples = sampler.get_chain(discard=250,thin = 2,flat=True)
 
 # Compare parameter outputs between emcee and MH
 import seaborn as sns
-sns.distplot(samples[:,1], label = "emcee")
-sns.distplot(MHOut[:,1], label = "MH")
-plt.xlabel("Production time ($\\tau$)")
-plt.ylabel("Density")
-plt.legend()
 
+
+f, axs = plt.subplots(1, 3, figsize=(8, 4))
+
+sns.histplot(samples[:,0],x ="Flow rate", kde= True, ax=axs[0])
+sns.histplot(samples[:,1],x ="Diff Co", kde= True, ax=axs[1])
+sns.histplot(samples[:,2],x ="Prod time", kde= True, ax=axs[2])
+plt.legend()
+f.tight_layout()
+
+#sns.distplot(MHOut[:,1], label = "MH")
+plt.savefig("/Users/danieltudor/Desktop/Image_1.png")
 
 """
 # Outputs the chains for each parameters

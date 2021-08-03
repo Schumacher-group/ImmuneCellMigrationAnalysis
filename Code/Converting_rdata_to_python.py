@@ -32,6 +32,7 @@ def create_dataframe(df, xw, yw):
     for row in range(len(row_labels) - 1):
         df.iloc[row_labels[row]:row_labels[row + 1], df.columns.get_loc('Track_ID')] = row + 1
     df = df.drop(df.index[row_labels - 1])
+    df = df.reset_index(drop = True) # Reset the index
     df['t'] = df['t'].astype(int)
     df["t"] = 60 * df["t"]
     reshapeddata = pd.DataFrame({'Track_ID': df['Track_ID'], 'time': df['t'], 'x': df['X'], 'y': df['Y']})

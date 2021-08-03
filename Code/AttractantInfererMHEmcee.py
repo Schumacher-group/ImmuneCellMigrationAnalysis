@@ -5,27 +5,28 @@ The outputs of this script are saved to the data folder and allow for the compar
 number of walkers required to reached convergence.
 """
 # Attractant Dynamics Parameters
-
 import os
 import sys
+sys.path.append(os.path.abspath('..'))
+
+
 from inference.attractant_inference import AttractantInferer
 from in_silico.sources import PointWound
 import numpy as np
 
-sys.path.append(os.path.abspath('..'))
 
 # This takes in the Random Walker inferred parameters and outputs a dictionary with the observed bias parameters
 # Attractant inference
 # Variables needed for Ensemble Monte Carlo
-n_iter = 10000
-n_walkers = 100
+n_iter = 6000
+n_walkers = 80
 
 # Variables needed for Metropolis-Hastings Monte Carlo
 n_steps = 1000
 burn_in = 100
 
 distance = [25, 50, 75, 100, 125, 150, 175]
-time = [5, 10, 30, 50]
+time = [10, 27, 45, 65]
 ob_readings = {}
 
 # This function reads in previously run data from walker inference pipeline, and outputs the observed bias mean and std\
@@ -33,7 +34,7 @@ ob_readings = {}
 
 
 def bias_persistence(x, y):
-    input_data = np.load(f'../data/WalkerData/PosterData/WildTypeData-{x}{y}.npy', allow_pickle=True)
+    input_data = np.load(f'../data/WalkerData/PosterData/Control_wound_{x}{y}_new1.npy', allow_pickle=True)
     sampler = input_data[0]  # Extracts the posterior chain array from the input_data array
     # Removes the burn-in, thins the posterior data and flattens the walkers into a single array
     input_data = sampler.get_chain(discard=250, thin=2, flat=True)
@@ -61,11 +62,11 @@ for i in range(len(time)):
 wound = PointWound(position=np.array([0, 0]))
 inferer = AttractantInferer(ob_readings, wound=wound, t_units='minutes')
 # Emcee (Ensemble Monte Carlo)
-Ensemble_out = inferer.Ensembleinfer(n_walkers, n_iter, ob_readings)
+Ensemble_out = inferer.ensembleinfer(n_walkers, n_iter)
 # This saves the Emcee output to the data folder
-Post_Save_Emcee = np.save('..data/Emcee_posterior_chain', Ensemble_out)
+Post_Save_Emcee = np.save('../data/Emcee_posterior_chain_control_SMBData', Ensemble_out)
 
 # Metropolis-Hastings Monte Carlo
-MH_out = inferer.infer(n_steps, burn_in, seed=0, suppress_warnings=True, use_tqdm=True)
+#MH_out = inferer.infer(n_steps, burn_in, seed=0, suppress_warnings=True, use_tqdm=True)
 # This saves the Metropolis-Hastings output to the data folder
-Post_Save_MH = np.save('..data/MH_posterior_chain', MH_out)
+#Post_Save_MH = np.save('..data/MH_posterior_chain_new', MH_out)

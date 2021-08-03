@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath('../'))
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from Utilities.distributions import Uniform, Normal
+from Utilities.distributions import Uniform, Normal, Loguniform
 from inference.base_inference import Inferer
 from typing import Union
 from Utilities.exceptions import SquareRootError
@@ -123,7 +123,7 @@ class AttractantInferer(Inferer):
         sigs = np.array([sig for mu, sig in ob_readings.values()])
 
         # convert to minutes
-        if t_units is 'seconds':
+        if t_units == 'seconds':
             self.t /= 60
 
         # this is our multivariate Gaussian observed bias distribution
@@ -138,8 +138,8 @@ class AttractantInferer(Inferer):
         """
         if model == "production":
             if priors is None:
-                self.priors = [Uniform(1, 1000),
-                               Uniform(10, 1000),
+                self.priors = [Uniform(0, 1000),
+                               Uniform(0, 1000),
                                Uniform(0, 65),
                                Uniform(0, 1),
                                Uniform(0, 1),
@@ -150,8 +150,8 @@ class AttractantInferer(Inferer):
                 assert len(priors) == 7
                 self.priors = priors
         elif model == "delta":
-            self.priors = [Uniform(200, 50),
-                           Normal(800, 100),
+            self.priors = [Uniform(0, 1000),
+                           Uniform(0, 1000),
                            Uniform(0, 1),
                            Uniform(0, 1),
                            Uniform(0, 50),
