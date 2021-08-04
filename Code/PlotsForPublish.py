@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import arviz as az
+import corner
 import numpy as np
 from pathlib import Path
 
@@ -55,8 +56,9 @@ def observed_bias_plots(x_start, x_stop, t_start, t_stop, param, wound_loc, mode
     return scatter(scatters)
 
 
-def observed_bias_posterior_plots(x_start, x_stop, t_start, t_stop, true_param, post_param, wound_loc, true_model,post_model, save_fig=False,
-                             **kwargs):
+def observed_bias_posterior_plots(x_start, x_stop, t_start, t_stop, true_param, post_param, wound_loc, true_model,
+                                  post_model, save_fig=False,
+                                  **kwargs):
     # noinspection DuplicatedCode
     from inference.attractant_inference import observed_bias
 
@@ -80,7 +82,7 @@ def observed_bias_posterior_plots(x_start, x_stop, t_start, t_stop, true_param, 
         scatters.append(
             axes[i].plot(r_points, observed_bias(true_param, r_points, tt, wound_loc, model=true_model),
                          color=col,
-                         marker='o', linewidth=0, markersize=6, label = 'True observed bias')[0])
+                         marker='o', linewidth=0, markersize=6, label='True observed bias')[0])
         for theta in samples[np.random.randint(len(samples), size=50)]:
             axes[i].plot(r, observed_bias(theta, r, tt, wound_loc, model=post_model), color="r", alpha=0.1)
 
@@ -88,7 +90,7 @@ def observed_bias_posterior_plots(x_start, x_stop, t_start, t_stop, true_param, 
 
     axes[0].set_title(f'Observed bias from {post_model} attractant model')
     axes[-1].set_xlabel('Distance, microns')
-    axes[len(t)-1].legend()
+    axes[len(t) - 1].legend()
     plt.tight_layout()
     if save_fig == True:
         plt.savefig(f'../data/Synthetic_Data/observed_bias_{post_model}_posterior.pdf', format='pdf')
@@ -119,3 +121,12 @@ def plot_posterior_chains(sampler, params, name, n_discards, save_fig=False, **k
     if save_fig == True:
         plt.savefig(f'../data/Synthetic_Data/posterior_plots_chains{name}.pdf', format='pdf')
     plt.show()
+
+
+def plot_marginal_joint_dists(sampler, params,model, save_fig = False):
+
+    fig = corner.corner(sampler, show_titles=True, labels=params, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
+    fig.suptitle(f'Joint and Marginal distributions from {model} model', size='large')
+    if save_fig == True:
+        plt.savefig(f'../data/Synthetic_Data/posterior_plots_marginal_joint_{model}.pdf', format='pdf')
+    fig.show()
