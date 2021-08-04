@@ -20,9 +20,8 @@ class TestDataCleaning(unittest.TestCase):
         r = 25
         tt = 10
         ActualResult = observed_bias(delta_params, r, tt, wound, model="delta")
-        ExpectedResult = observed_bias(delta_params, r, tt, wound, model="delta")
-        self.assertEqual(ActualResult, ExpectedResult, 'Different models chosen')
-
+        ExpectedResult = observed_bias(production_params, r, tt, wound, model="production")
+        self.assertNotEqual(ActualResult, ExpectedResult, 'Different models chosen')
 
 if __name__ == '__main__':
     unittest.main()
