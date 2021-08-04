@@ -7,17 +7,30 @@ from PlotsForPublish import observed_bias_plots
 
 data_dir = Path('../data')
 
-params_delta = [200, 200, 0.2, 0.5, 3, 0.001]
-params_production = [200, 200, 35, 0.2, 0.5, 3, 0.001]
+params_delta = [80, 200, 0.2, 0.5, 3, 0.001]
+params_production = [600, 400, 35, 0.2, 0.5, 3, 0.001]
 wound = PointWound(position=np.array([0, 0]))
 
-ob_readings = observed_bias_plots(25, 250, 10, 130, params_delta, wound, 'delta', save_fig=True)
-Num_walkers_list = np.arange(10, 80, 10)
+ob_readings = observed_bias_plots(25, 300, 10, 140, params_production, wound, 'production', save_fig=True)
+Num_walkers_list = np.arange(10, 100, 10)
 Num_acceptance_rate_production = []
 Num_acceptance_rate_delta = []
-
-n_walkers = 50
-n_iters = 12000
+Bayes_Factors = []
+n_iters = 10000
+"""
+for num in Num_walkers_list:
+    inferer_prod = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="production")
+    post_production = inferer_prod.ensembleinfer(num, n_iters)
+    production_acceptance_fraction = np.mean(post_production[0].acceptance_fraction)
+    inferer_delta = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="delta")
+    post_delta = inferer_delta.ensembleinfer(num, n_iters)
+    delta_acceptance_fraction = np.mean(post_delta[0].acceptance_fraction)
+    BayesFactor(post_production[0], post_delta[0], n_discards=8000)
+    Num_acceptance_rate_production.append()
+    Num_acceptance_rate_delta.append()
+    Bayes_Factors.append()
+"""
+n_walkers = 70
 inferer_prod = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="production")
 post_production = inferer_prod.ensembleinfer(n_walkers, n_iters)
 
@@ -31,5 +44,6 @@ production_acceptance_fraction = np.mean(post_production[0].acceptance_fraction)
 delta_acceptance_fraction = np.mean(post_delta[0].acceptance_fraction)
 print(f"Acceptance fraction for production: {production_acceptance_fraction}"
       f" Acceptance fraction for delta: {delta_acceptance_fraction}")
-save_posterior_results_production = np.save('../data/Synthetic_Data/posterior_results_production_deltaTrue', post_production)
-save_posterior_results_delta = np.save('../data/Synthetic_Data/posterior_results_delta_deltaTrue', post_delta)
+save_posterior_results_production = np.save('../data/Synthetic_Data/posterior_results_production_longer_time_space',
+                                            post_production)
+save_posterior_results_delta = np.save('../data/Synthetic_Data/posterior_results_delta_longer_time_space', post_delta)
