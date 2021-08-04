@@ -18,7 +18,9 @@ delta = post_delta[0].get_chain(discard=6000, thin=5, flat=True)
 """
 Plotting for production model; posterior distributions, chains, inferred observed bias and marginal-joint distributions
 """
-plot_posterior_distributions(post_prod, params_prod_name, 7, name='Production', save_fig=True)
+plot_posterior_distributions(post_prod, params_prod_name, 7,
+                             reference = params_production, name='Production', save_fig=True)
+
 plot_posterior_chains(post_prod, params_prod_name, name='Production', n_discards=6000, save_fig=True)
 plot_marginal_joint_dists(production, params_prod_name, model='production', save_fig=False)
 observed_bias_posterior_plots(25, 250, 10, 130, params_production, production, wound, true_model='production',
@@ -28,7 +30,9 @@ observed_bias_posterior_plots(25, 250, 10, 130, params_production, production, w
 Plotting for delta model; posterior distributions, chains, inferred observed bias and marginal-joint distributions
 """
 
-plot_posterior_distributions(post_delta, params_delta_name, 6, name='Delta', save_fig=True)
+
+plot_posterior_distributions(post_delta, params_delta_name, 6,
+                             reference = params_delta,name='Delta', save_fig=True)
 plot_posterior_chains(post_delta, params_delta, name='Delta', n_discards=6000, save_fig=True)
 plot_marginal_joint_dists(delta, params_delta_name, model='delta', save_fig=True)
 observed_bias_posterior_plots(25, 250, 10, 130, params_production, delta, wound, true_model='production',

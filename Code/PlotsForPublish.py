@@ -97,14 +97,14 @@ def observed_bias_posterior_plots(x_start, x_stop, t_start, t_stop, true_param, 
     plt.show()
 
 
-def plot_posterior_distributions(sampler, variables, num_vars, name, save_fig=False, **kwargs):
+def plot_posterior_distributions(sampler, variables, num_vars,reference, name, save_fig=False, **kwargs):
     var_names = variables
-    emcee_data = az.from_emcee(sampler[0], var_names=var_names).sel(draw=slice(100, None))
-    plt.suptitle(f"Posterior distributions from {name}")
+    emcee_data = az.from_emcee(sampler[0], var_names=var_names).sel(draw=slice(1000, None))
 
-    az.plot_posterior(emcee_data, var_names=var_names[:])
+    az.plot_posterior(emcee_data, var_names=var_names[:],ref_val=reference)
     if save_fig == True:
         plt.savefig(f'../data/Synthetic_Data/posterior_plots_{name}.pdf', format='pdf')
+    plt.title("CHECK")
     plt.show()
 
 
