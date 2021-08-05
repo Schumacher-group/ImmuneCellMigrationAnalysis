@@ -13,11 +13,11 @@ params_production = [600, 400, 35, 0.2, 0.5, 3, 0.001]
 wound = PointWound(position=np.array([0, 0]))
 
 ob_readings = observed_bias_plots(25, 300, 10, 140, params_production, wound, 'production', save_fig=True)
-Num_walkers_list = np.arange(15, 105, 10)
+Num_walkers_list = np.arange(15, 150, 5)
 Num_acceptance_rate_production = []
 Num_acceptance_rate_delta = []
 Bayes_Factors = []
-n_iters = 10000
+n_iters = 14000
 
 for num in Num_walkers_list:
     inferer_prod = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="production")
@@ -26,10 +26,10 @@ for num in Num_walkers_list:
     inferer_delta = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="delta")
     post_delta = inferer_delta.ensembleinfer(num, n_iters)
     delta_acceptance_fraction = np.mean(post_delta[0].acceptance_fraction)
-    BayesFactor(post_production[0], post_delta[0], n_discards=8000)
+    Bayes_Factor = BayesFactor(post_production[0], post_delta[0], n_discards=8000)
     Num_acceptance_rate_production.append(production_acceptance_fraction)
     Num_acceptance_rate_delta.append(delta_acceptance_fraction)
-    Bayes_Factors.append(BayesFactor)
+    Bayes_Factors.append(Bayes_Factor)
 save_num_walkers = np.save('../data/Synthetic_Data/number_of_walkers', Num_walkers_list)
 save_accept_production = np.save('../data/Synthetic_Data/acceptance_rate_production',Num_acceptance_rate_production)
 save_accept_delta = np.save('../data/Synthetic_Data/acceptance_rate_delta', Num_acceptance_rate_delta)
