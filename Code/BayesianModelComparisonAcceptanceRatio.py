@@ -1,11 +1,12 @@
-from pathlib import Path
+import os
+import sys
+sys.path.append(os.path.abspath('..'))
 import numpy as np
 from inference.attractant_inference import AttractantInferer
 from in_silico.sources import PointWound
 from BayesFactor import BayesFactor
 from PlotsForPublish import observed_bias_plots
 
-data_dir = Path('../data')
 
 params_delta = [80, 200, 0.2, 0.5, 3, 0.001]
 params_production = [600, 400, 35, 0.2, 0.5, 3, 0.001]

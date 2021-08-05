@@ -1,10 +1,11 @@
+import os
+import sys
+sys.path.append(os.path.abspath('..'))
 import matplotlib.pyplot as plt
 import arviz as az
 import corner
 import numpy as np
-from pathlib import Path
 
-data_dir = Path('../data')
 
 
 def observed_bias_plots(x_start, x_stop, t_start, t_stop, param, wound_loc, model, save_fig=False, **kwargs):
