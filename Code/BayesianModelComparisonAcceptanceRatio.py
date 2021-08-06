@@ -12,7 +12,7 @@ params_delta = [80, 200, 0.2, 0.5, 3, 0.001]
 params_production = [600, 400, 35, 0.2, 0.5, 3, 0.001]
 wound = PointWound(position=np.array([0, 0]))
 
-ob_readings = observed_bias_plots(25, 300, 10, 140, params_production, wound, 'delta', save_fig=True)
+ob_readings = observed_bias_plots(25, 300, 10, 140, params_delta, wound, 'delta', save_fig=True)
 Num_walkers_list = np.arange(15, 150, 5)
 Num_acceptance_rate_production = []
 Num_acceptance_rate_delta = []
