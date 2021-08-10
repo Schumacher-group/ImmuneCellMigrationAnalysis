@@ -22,10 +22,10 @@ n_iters = 14000
 for num in range(50):
     print(f"I am at  walker number of {num} of 60")
     inferer_prod = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="production")
-    post_production = inferer_prod.ensembleinfer(num, n_iters)
+    post_production = inferer_prod.ensembleinfer(Num_walkers, n_iters)
     production_acceptance_fraction = np.mean(post_production[0].acceptance_fraction)
     inferer_delta = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="delta")
-    post_delta = inferer_delta.ensembleinfer(num, n_iters)
+    post_delta = inferer_delta.ensembleinfer(Num_walkers, n_iters)
     delta_acceptance_fraction = np.mean(post_delta[0].acceptance_fraction)
     Num_acceptance_rate_production.append(production_acceptance_fraction)
     Num_acceptance_rate_delta.append(delta_acceptance_fraction)
