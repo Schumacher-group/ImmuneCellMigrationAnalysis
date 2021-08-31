@@ -26,11 +26,12 @@ class Inferer:
 
     def ensembleinfer(self, n_walkers: int, niter: int):
         initial = np.array([prior.sample() for prior in self.priors])
-        n_dim = len(initial)
-        p0 = [initial + 1e-5 * np.random.randn(n_dim) for i in range(n_walkers)]
-        l_p = self.log_probability
+        ndim = len(initial)
+        p0 = [np.array(initial) + 1e-4 * np.random.randn(ndim) for i in range(n_walkers)]
         l_like = self.log_likelihood
-        sampler = emcee.EnsembleSampler(n_walkers, n_dim, l_p)
+        l_p = self.log_probability
+
+        sampler = emcee.EnsembleSampler(n_walkers, ndim, l_p)
         print("Running sampler: ")
         pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
         return sampler, pos, prob, state

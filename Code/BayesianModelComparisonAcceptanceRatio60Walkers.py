@@ -20,7 +20,7 @@ Bayes_Factors = []
 n_iters = 14000
 
 for num in range(50):
-    print(f"I am at  walker number of {num} of 60")
+    print(f"I am at  walker number of {num} of 120")
     inferer_prod = AttractantInferer(ob_readings, t_units='minutes', wound=wound, model="production")
     post_production = inferer_prod.ensembleinfer(Num_walkers, n_iters)
     production_acceptance_fraction = np.mean(post_production[0].acceptance_fraction)
@@ -32,6 +32,6 @@ for num in range(50):
     Bayes_Factors.append(BayesFactor(post_production[0], post_delta[0], n_discards=7000))
 
 
-save_accept_production = np.save('../data/Synthetic_Data/acceptance_rate_production_delta_60walkers',Num_acceptance_rate_production)
-save_accept_delta = np.save('../data/Synthetic_Data/acceptance_rate_delta_delta_60walkers', Num_acceptance_rate_delta)
-save_bayes_factor = np.save('../data/Synthetic_Data/BayesFactor_delta_60walkers',Bayes_Factors)
+save_accept_production = np.save('../data/Synthetic_Data/acceptance_rate_production_delta_60walkers_large',Num_acceptance_rate_production)
+save_accept_delta = np.save('../data/Synthetic_Data/acceptance_rate_delta_delta_60walkers_large', Num_acceptance_rate_delta)
+save_bayes_factor = np.save('../data/Synthetic_Data/BayesFactor_delta_60walkers_large',Bayes_Factors)
