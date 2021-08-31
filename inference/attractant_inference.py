@@ -139,7 +139,7 @@ class AttractantInferer(Inferer):
         if model == "production":
             if priors is None:
                 self.priors = [Uniform(0, 1000),
-                               Uniform(0, 1000),
+                               Uniform(100, 1000),
                                Uniform(0, 65),
                                Uniform(0, 1),
                                Uniform(0, 1),
@@ -151,7 +151,7 @@ class AttractantInferer(Inferer):
                 self.priors = priors
         elif model == "delta":
             self.priors = [Uniform(0, 1000),
-                           Uniform(0, 1000),
+                           Uniform(100, 1000),
                            Uniform(0, 1),
                            Uniform(0, 1),
                            Uniform(0, 50),
