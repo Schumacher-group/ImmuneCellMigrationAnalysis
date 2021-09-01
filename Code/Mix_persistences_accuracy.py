@@ -15,7 +15,7 @@ import numpy as np
 
 source = PointSource(position=np.array([0, 0]))
 
-t = np.arange(20, 120, 20)
+t = np.arange(30, 330, 30)
 
 np.random.seed(100)
 w1, p1, b1 = 0.5, 0.8, 0.05
@@ -42,15 +42,14 @@ for step in t:
 total_paths_list = [np.concatenate((p1_paths_list[i], p2_paths_list[i]), axis = 2 ) for i in range(len(p1_paths_list))]
 
 
-niter = 5000 # number of MCMC iterations
-nwalkers = 32 # number of
+niter = 12000 # number of MCMC iterations
+nwalkers = 60 # number of
 iters = 0
 for i in range(len(t)):
     inferer_t = BiasedPersistentInfererMix(total_paths_list[i], source)
-    total_inf = inferer_t.ensembleinfer(nwalkers,niter)
+    total_inf = inferer_t.ensembleinfer(nwalkers, niter)
     np.save(f'../data/Mixed_persistence_accuracy/total_list_vals{i}', total_inf)
-    iters +=1
-    print(f"{iters}/17")
+    print(f"{i}/{len(t)}")
 
 
 datetime_object = datetime.datetime.now()
