@@ -48,7 +48,7 @@ iters = 0
 for i in range(len(t)):
     inferer_t = BiasedPersistentInfererMix(total_paths_list[i], source)
     total_inf = inferer_t.ensembleinfer(nwalkers, niter)
-    np.save(f'../data/Mixed_persistence_accuracy/total_list_vals{i}', total_inf)
+    np.save(f'../data/Mixed_persistence_accuracy/total_list_vals{i}_for_Yi', total_inf)
     print(f"{i}/{len(t)}")
 
 
