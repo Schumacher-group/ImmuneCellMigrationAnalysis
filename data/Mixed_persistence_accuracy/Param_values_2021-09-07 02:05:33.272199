@@ -1,0 +1,1 @@
+Parameter values----------------biases = (0.05, 0.05), persistence 1 = 0.8, persistence 2 = 0.9 , weights = (0.5, 0.5)Length of walk = 60Number of walkers = [ 30  60  90 120 150 180 210 240 270 300]
