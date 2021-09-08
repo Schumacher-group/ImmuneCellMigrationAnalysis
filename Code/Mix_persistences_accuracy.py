@@ -18,11 +18,11 @@ source = PointSource(position=np.array([0, 0]))
 t = np.arange(30, 330, 30)
 
 np.random.seed(100)
-w1, p1, b1 = 0.5, 0.8, 0.05
+w1, p1, b1 = 0.5, 0.4, 0.1
 params1 = np.array([w1, p1, b1])
 walker1 = BP_Leukocyte(params1, source)
 
-w2, p2, b2 = 0.5, 0.9, 0.05
+w2, p2, b2 = 0.5, 0.8, 0.1
 params2 = np.array([w2, p2, b2])
 walker2 = BP_Leukocyte(params2, source)
 
