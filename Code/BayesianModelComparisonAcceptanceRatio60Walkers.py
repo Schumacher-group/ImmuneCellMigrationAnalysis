@@ -13,11 +13,11 @@ params_production = [600, 400, 35, 0.2, 0.5, 3, 0.001]
 wound = PointWound(position=np.array([0, 0]))
 
 ob_readings = observed_bias_plots(25, 300, 10, 140, params_production, wound, 'production', save_fig=True)
-Num_walkers  = 60
+Num_walkers  = 80
 Num_acceptance_rate_production = []
 Num_acceptance_rate_delta = []
 Bayes_Factors = []
-n_iters = 14000
+n_iters = 18000
 
 for num in range(50):
     print(f"I am at  walker number of {num} of 120")
@@ -32,6 +32,6 @@ for num in range(50):
     Bayes_Factors.append(BayesFactor(post_production[0], post_delta[0], n_discards=7000))
 
 
-save_accept_production = np.save('../data/Synthetic_Data/acceptance_rate_production_delta_60walkers_large',Num_acceptance_rate_production)
-save_accept_delta = np.save('../data/Synthetic_Data/acceptance_rate_delta_delta_60walkers_large', Num_acceptance_rate_delta)
-save_bayes_factor = np.save('../data/Synthetic_Data/BayesFactor_delta_60walkers_large',Bayes_Factors)
+save_accept_production = np.save('../data/Synthetic_Data/acceptance_rate_production_delta_80walkers_large',Num_acceptance_rate_production)
+save_accept_delta = np.save('../data/Synthetic_Data/acceptance_rate_delta_delta_80walkers_large', Num_acceptance_rate_delta)
+save_bayes_factor = np.save('../data/Synthetic_Data/BayesFactor_delta_80walkers_large',Bayes_Factors)

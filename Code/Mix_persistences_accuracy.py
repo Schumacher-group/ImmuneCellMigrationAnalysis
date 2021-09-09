@@ -18,12 +18,12 @@ source = PointSource(position=np.array([0, 0]))
 t = np.arange(30, 330, 30)
 
 np.random.seed(100)
-w1, p1, b1 = 0.5, 0.4, 0.1
+w1, p1, b1 = 0.5, 0.4, 0.6
 params1 = np.array([w1, p1, b1])
 walker1 = BP_Leukocyte(params1, source)
 
-w2, p2, b2 = 0.5, 0.8, 0.1
-params2 = np.array([w2, p2, b2])
+w2, p2 = 0.5, 0.8
+params2 = np.array([w2, p2, b1])
 walker2 = BP_Leukocyte(params2, source)
 
 p1_paths_list = []
@@ -42,8 +42,8 @@ for step in t:
 total_paths_list = [np.concatenate((p1_paths_list[i], p2_paths_list[i]), axis = 2 ) for i in range(len(p1_paths_list))]
 
 
-niter = 12000 # number of MCMC iterations
-nwalkers = 60 # number of
+niter = 18000 # number of MCMC iterations
+nwalkers = 90 # number of
 iters = 0
 for i in range(len(t)):
     inferer_t = BiasedPersistentInfererMix(total_paths_list[i], source)
