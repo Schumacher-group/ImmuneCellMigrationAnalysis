@@ -59,7 +59,7 @@ sampler = EM_total[0]
 p_total = sampler.get_chain(discard=1000, thin=1, flat=True)
 P1 = p_total[:,2]
 P2 = p_total[:,3]
-np.save("/Users/danieltudor/Documents/GitHub/ImmuneCellMigrationAnalysis/data/Mixed_persistence_accuracy/EM_total",EM_total)
+np.save("../data/Mixed_persistence_accuracy/EM_total",EM_total)
 plt.hist(P1,label='$P$ = {:.2f} $\pm$ {:.2f}'.format(np.mean(P1), np.std(P1)),bins=100,alpha=0.6,density=True)
 plt.hist(P2,label='$P$ = {:.2f} $\pm$ {:.2f}'.format(np.mean(P2), np.std(P2)),bins=100,alpha=0.6,density=True)
 
@@ -68,7 +68,7 @@ plt.axvline(0.7,color='black',ls='--', label = "True value: 0.7")
 plt.xlabel("Persistence parameter",fontsize=16)
 plt.ylabel("Probability Density",fontsize=16)
 plt.legend()
-plt.savefig("/Users/danieltudor/Documents/GitHub/ImmuneCellMigrationAnalysis/data/Mixed_persistence_accuracy/Persistence_total_mix_w2_p1_p2.pdf")
+plt.savefig("../data/Mixed_persistence_accuracy/Persistence_total_mix_w2_p1_p2.pdf")
 plt.show()
 
 
