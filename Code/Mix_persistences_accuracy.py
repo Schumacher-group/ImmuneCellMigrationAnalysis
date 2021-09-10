@@ -42,20 +42,18 @@ for step in t:
 total_paths = [np.concatenate((p1_paths_list[i], p2_paths_list[i]), axis = 2 ) for i in range(len(p1_paths_list))]
 
 
-niter = 18000 # number of MCMC iterations
-nwalkers = 90 # number of
+niter = 2000 # number of MCMC iterations
+nwalkers = 140 # number of
 iters = 0
 for i in range(len(t)):
     inferer_total = BiasedPersistentInferer(total_paths[i], source)
-    niter = 2000  # number of MCMC iterations
-    nwalkers = 140  # number of
     EM_total = inferer_total.ensembleinfer(nwalkers, niter)
 
     sampler = EM_total[0]
     p_total = sampler.get_chain(discard=1000, thin=1, flat=True)
     P1 = p_total[:, 2]
     P2 = p_total[:, 3]
-    np.save(f"/Users/danieltudor/Documents/GitHub/ImmuneCellMigrationAnalysis/data/Mixed_persistence_accuracy/EM_total{i}",
+    np.save(f"../data/Mixed_persistence_accuracy/EM_total{i}",
             EM_total)
     plt.hist(P1, label='$P_1$ = {:.2f} $\pm$ {:.2f}'.format(np.mean(P1), np.std(P1)), bins=100, alpha=0.6, density=True)
     plt.hist(P2, label='$P_2$ = {:.2f} $\pm$ {:.2f}'.format(np.mean(P2), np.std(P2)), bins=100, alpha=0.6, density=True)
@@ -66,7 +64,7 @@ for i in range(len(t)):
     plt.ylabel("Probability Density", fontsize=16)
     plt.legend()
     plt.savefig(
-        f"/Users/danieltudor/Documents/GitHub/ImmuneCellMigrationAnalysis/data/Mixed_persistence_accuracy/Persistence_total_mix_w2_p1_p2_{i}.pdf")
+        f"../data/Mixed_persistence_accuracy/Persistence_total_mix_w2_p1_p2_{i}.pdf")
     plt.show()
 
 
