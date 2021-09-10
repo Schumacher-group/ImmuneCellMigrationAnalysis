@@ -27,7 +27,7 @@ class Inferer:
     def ensembleinfer(self, n_walkers: int, niter: int):
         initial = np.array([prior.sample() for prior in self.priors])
         ndim = len(initial)
-        p0 = [np.array(initial) + 1e-4 * np.random.randn(ndim) for i in range(n_walkers)]
+        p0 = [np.array(initial) + 1e-3 * np.random.randn(ndim) for i in range(n_walkers)]
         l_like = self.log_likelihood
         l_p = self.log_probability
 
