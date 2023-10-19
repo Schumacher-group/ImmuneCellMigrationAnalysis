@@ -177,7 +177,7 @@ class WrappedNormal:
 
         # then sum normal(X) vertically
 
-        X = np.array([x + 2 * np.pi * i for i in range(-4, 5)])
+        X = np.array([x + 2 * np.pi * i for i in range(-8, 9)])
         return self.normal_pdf(X).sum(0)
 
     def normal_pdf(self, x: Union[float, np.ndarray]):

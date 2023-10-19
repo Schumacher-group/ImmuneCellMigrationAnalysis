@@ -299,7 +299,7 @@ def plot_AD_param_dist(dist: np.ndarray, priors: list = None):
 
     """
 
-    fig, axes = plt.subplots(nrows=1, ncols=7, figsize=(12, 5), sharex='col')
+    fig, axes = plt.subplots(nrows=1, ncols=7, figsize=(17, 5), sharex='col')
     cols = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     names = ['$q$ [mol min$^{-1}$]', '$D$ [$\mu m^{2}$ min$^{-1}$]', 'τ [min]', '$R_0$ [mol $\mu m^{-2}$]',
@@ -310,8 +310,8 @@ def plot_AD_param_dist(dist: np.ndarray, priors: list = None):
         axes[j].set_yticks([])
         axes[j].hist(dist[:, j], bins=50, color=cols[j], alpha=0.6, density=True)
         if priors is not None:
-            priors[j].plot(ax=axes[j], color=cols[j])
-
+            axes[j].axvline(priors[j], color='black', ls='--', label=f"True value: {priors[j]}")
+            axes[j].legend(loc="lower right")
     plt.tight_layout()
     plt.show()
 

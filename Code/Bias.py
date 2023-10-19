@@ -1,0 +1,118 @@
+# Import all the necessary modules needed to run the inference pipeline
+import sys
+import os
+
+sys.path.append(os.path.abspath('..'))
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from inference.walker_inference import BiasedPersistentInferer, prepare_paths, spatial_temporal_binning
+from inference.attractant_inference import AttractantInferer
+from in_silico.sources import PointSource, PointWound
+
+
+def create_dataframe(df, xw, yw,loc):
+
+
+    reshapeddata = pd.DataFrame({'Track_ID':df['TRACK_ID'],
+                             't':df['POSITION_T'],
+                             'x':df['POSITION_X'],
+                             'y':df['POSITION_Y']})    
+    reshapeddata['x'] = reshapeddata['x'] - xw
+    reshapeddata['y'] = reshapeddata['y'] - yw
+    reshapeddata['r'] = (lambda x, y: np.sqrt(x ** 2 + y ** 2))(reshapeddata['x'], reshapeddata['y'])
+    reshapeddata['Track_ID'] = reshapeddata['Track_ID'].astype(str)
+    reshapeddata.Track_ID = reshapeddata.Track_ID + "{}".format(loc)  # creates a label for the tracks to be organised by
+    return reshapeddata
+
+def angle_binning(trajectory):
+        # Weaver's paper spatial binning: 0-35,35-70,70-140,140-250,250-360,360-500; 20, 60, 100, 140, 180,220, 
+        theta_pos = trajectory[(trajectory['theta'] >= 0)]
+        theta_neg = trajectory[(trajectory['theta'] < 0)]
+
+        return [theta_pos, theta_neg]
+
+def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
+
+    
+    def space_binning(trajectory):
+        # Weaver's paper spatial binning: 0-35,35-70,70-140,140-250,250-360,360-500; 20, 60, 100, 140, 180,220, 
+        s30 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 40)]
+        s60 = trajectory[(trajectory['r'] >= 40) & (trajectory['r'] < 80)]
+        s90 = trajectory[(trajectory['r'] >= 80) & (trajectory['r'] < 120)]
+        s130 = trajectory[(trajectory['r'] >= 120) & (trajectory['r'] < 160)]
+        s150 = trajectory[(trajectory['r'] >= 160) & (trajectory['r'] < 200)]
+        s180 = trajectory[(trajectory['r'] >= 200) & (trajectory['r'] < 240)]
+        s210 = trajectory[(trajectory['r'] >= 240) & (trajectory['r'] < 280)]
+
+        return [s30,s60, s90,s130,s150,s180,s210]
+
+    def time_binning(space_bin):
+        # Weavers paper temporal binning: 0-5,5-10, 20-35,35-50,50-60    ,65-90,90-125
+        t5  = space_bin[(space_bin['t'] >= 0) & (space_bin['t'] < 5)]
+        t10 = space_bin[(space_bin['t'] >= 5) & (space_bin['t'] < 10)]
+        t15 = space_bin[(space_bin['t'] >= 10) & (space_bin['t'] < 15)]
+        t20 = space_bin[(space_bin['t'] >= 15) & (space_bin['t'] < 20)]
+        t25 = space_bin[(space_bin['t'] >= 20) & (space_bin['t'] < 25 )]
+        t30 = space_bin[(space_bin['t'] >= 25) & (space_bin['t'] < 30 )]
+        t40 = space_bin[(space_bin['t'] >= 30) & (space_bin['t'] < 40 )]
+        t50 = space_bin[(space_bin['t'] >= 40) & (space_bin['t'] < 50 )]
+        t60 = space_bin[(space_bin['t'] >= 50) & (space_bin['t'] < 61 )]
+        return [t5,t10,t15,t20,t25,t30,t40,t50,t60]
+
+    def Over_lapping_time_binning(space_bin):
+        # Weavers paper temporal binning: 0-5,5-10, 20-35,35-50,50-60    ,65-90,90-125
+        t2  = space_bin[(space_bin['t'] >= 0) & (space_bin['t'] < 5)]
+        t5 = space_bin[(space_bin['t'] >= 2.5) & (space_bin['t'] < 7.5)]
+        t7 = space_bin[(space_bin['t'] >= 5) & (space_bin['t'] < 10)]
+        t10 = space_bin[(space_bin['t'] >= 7.5) & (space_bin['t'] < 12.5)]
+        t12= space_bin[(space_bin['t'] >= 10) & (space_bin['t'] < 15 )]
+        t15 = space_bin[(space_bin['t'] >= 12.5) & (space_bin['t'] < 17.5 )]
+        t17 = space_bin[(space_bin['t'] >= 15) & (space_bin['t'] < 20 )]
+        t20 = space_bin[(space_bin['t'] >= 17.5) & (space_bin['t'] < 22.5)]
+
+  # Bins for comparison against 15 mins wound = (0-15)(15-30)(30-45)(45-60)(60-75)(75-90)
+        return [t2,t5,t7,t10,t12,t15,t17,t20]
+
+
+    distance = space_binning(dataframe)
+    time_space_bins = list(map(Over_lapping_time_binning, distance))
+
+    return time_space_bins
+
+trajectory = pd.read_csv("/Users/danieltudor/Desktop/Wood group/New Images from Luigi/Videos/Half_wound_filtered_spots_all_new")
+trajectory = trajectory.drop(trajectory.columns[0], axis = 1 )
+# Lets split the data by the top half and bottom half: 
+angles = angle_binning(trajectory)
+angle_pos = angles[0]
+angle_neg = angles[1]
+print(angle_pos.head())
+print(angle_neg.head())
+
+
+
+Bins_pos = spatial_temporal_binning(angle_pos)
+Bins_neg = spatial_temporal_binning(angle_neg)
+
+# Inference pipeline for BP_Walker 
+source = PointSource(position=np.array([0,0])) # Source is a position at 0,0 due to readjustment of tracks earlier
+NWalkers = 30 # 100 walkers and 1000 iterations seem to give the best convergence of the emcee 
+NIters = 1000
+t = 0
+
+Bins = Bins_neg
+
+total_bins = (len(Bins) * len(Bins[0])) # total number of bins to run the inference on 
+
+for i in range(len(Bins)):
+    for j in range(len(Bins[0])):
+        t += 1  # Tracks the number of bins
+        print('analysing bin {}/{}'.format(t,total_bins))  # to give an overall sense of progress
+        inferer = BiasedPersistentInferer(
+            prepare_paths([paths[['x', 'y']].values for id, paths in Bins[i][j].groupby('Track_ID')],
+                          include_t=False), source) # prepares the data for running the inference 
+        inf_out = inferer.ensembleinfer(NWalkers, NIters, Pooling = False) # calls the emcee inferer 
+        np.save(
+            '../data/New_data/Half_mcr_data_neg{}{}_bin_change'.format(
+                i, j), inf_out) # Saves to local data file 

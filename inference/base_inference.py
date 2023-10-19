@@ -1,7 +1,9 @@
 import time
 import numpy as np
 import emcee
+import zeus
 
+from multiprocessing import Pool
 from tqdm import tqdm
 from Utilities.parallel import parallel_methods
 
@@ -23,18 +25,27 @@ class Inferer:
         if not np.isfinite(lp):
             return -np.inf
         return lp + self.log_likelihood(params)
+  
 
-    def ensembleinfer(self, n_walkers: int, niter: int):
+    def ensembleinfer(self, n_walkers: int, niter: int, Pooling: bool):
         initial = np.array([prior.sample() for prior in self.priors])
         ndim = len(initial)
-        p0 = [np.array(initial) + 1e-3 * np.random.randn(ndim) for i in range(n_walkers)]
+        p0 = [np.array(initial) + 1e-4 * np.random.randn(ndim) for i in range(n_walkers)]
         l_like = self.log_likelihood
         l_p = self.log_probability
-
-        sampler = emcee.EnsembleSampler(n_walkers, ndim, l_p)
-        print("Running sampler: ")
-        pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
-        return sampler, pos, prob, state
+        if Pooling == True:
+            with Pool() as pool:
+                sampler = emcee.EnsembleSampler(n_walkers, ndim, l_p)
+                print("Running sampler: ")
+                pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
+                return sampler, pos, prob, state
+    
+        else:
+            sampler = emcee.EnsembleSampler(n_walkers, ndim, l_p)
+            print("Running sampler: ")
+            pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
+            return sampler, pos, prob, state
+        
 
     # This implements the Metropolis-Hastings Monte Carlo method
     def mhinfer(self, n_steps: int, burn_in: int, seed: int = 0,

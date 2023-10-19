@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath('../'))
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from Utilities.distributions import Uniform, Normal, Loguniform
+from Utilities.distributions import Uniform, Normal, Loguniform, TruncatedNormal
 from inference.base_inference import Inferer
 from typing import Union
 from Utilities.exceptions import SquareRootError
@@ -137,21 +137,21 @@ class AttractantInferer(Inferer):
         the flow rate q is related with the initial mass concentration m0
         """
         if model == "production":
-            if priors is None:
-                self.priors = [Uniform(0, 1000),
-                               Uniform(100, 1000),
-                               Uniform(0, 65),
-                               Uniform(0, 1),
-                               Uniform(0, 1),
-                               Uniform(0, 50),
-                               Uniform(0.0, 0.02)]
+            if priors is None:                  # Priors
+                self.priors = [Uniform(0,1000), # q 
+                               Uniform(80,1000), # D 
+                               Uniform(0,50), # τ was 50
+                               Uniform(0, 1), # R0
+                               Uniform(0, 1), # κ
+                               Uniform(0, 50), # m 
+                               Uniform(0.0, 0.02)] # b0 
             else:
                 assert isinstance(priors, list)
                 assert len(priors) == 7
                 self.priors = priors
         elif model == "delta":
             self.priors = [Uniform(0, 1000),
-                           Uniform(100, 1000),
+                           Uniform(0, 1000),
                            Uniform(0, 1),
                            Uniform(0, 1),
                            Uniform(0, 50),
