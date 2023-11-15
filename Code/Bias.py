@@ -32,9 +32,9 @@ def angle_binning(trajectory):
 
 def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
 
-    
+
     def space_binning(trajectory):
-        # Weaver's paper spatial binning: 0-35,35-70,70-140,140-250,250-360,360-500; 20, 60, 100, 140, 180,220, 
+        # Weaver's paper spatial binning: 0-35,35-70,70-140,140-250,250-360,360-500
         s40 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 40)]
         s80 = trajectory[(trajectory['r'] >= 40) & (trajectory['r'] < 80)]
         s120 = trajectory[(trajectory['r'] >= 80) & (trajectory['r'] < 120)]
