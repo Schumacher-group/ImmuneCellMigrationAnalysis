@@ -13,8 +13,6 @@ from in_silico.sources import PointSource, PointWound
 
 
 def create_dataframe(df, xw, yw,loc):
-
-
     reshapeddata = pd.DataFrame({'Track_ID':df['TRACK_ID'],
                              't':df['POSITION_T'],
                              'x':df['POSITION_X'],
@@ -27,7 +25,6 @@ def create_dataframe(df, xw, yw,loc):
     return reshapeddata
 
 def angle_binning(trajectory):
-        # Weaver's paper spatial binning: 0-35,35-70,70-140,140-250,250-360,360-500; 20, 60, 100, 140, 180,220, 
         theta_pos = trajectory[(trajectory['theta'] >= 0)]
         theta_neg = trajectory[(trajectory['theta'] < 0)]
 
@@ -38,18 +35,18 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
     
     def space_binning(trajectory):
         # Weaver's paper spatial binning: 0-35,35-70,70-140,140-250,250-360,360-500; 20, 60, 100, 140, 180,220, 
-        s30 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 40)]
-        s60 = trajectory[(trajectory['r'] >= 40) & (trajectory['r'] < 80)]
-        s90 = trajectory[(trajectory['r'] >= 80) & (trajectory['r'] < 120)]
-        s130 = trajectory[(trajectory['r'] >= 120) & (trajectory['r'] < 160)]
-        s150 = trajectory[(trajectory['r'] >= 160) & (trajectory['r'] < 200)]
-        s180 = trajectory[(trajectory['r'] >= 200) & (trajectory['r'] < 240)]
-        s210 = trajectory[(trajectory['r'] >= 240) & (trajectory['r'] < 280)]
+        s40 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 40)]
+        s80 = trajectory[(trajectory['r'] >= 40) & (trajectory['r'] < 80)]
+        s120 = trajectory[(trajectory['r'] >= 80) & (trajectory['r'] < 120)]
+        s160 = trajectory[(trajectory['r'] >= 120) & (trajectory['r'] < 160)]
+        s200 = trajectory[(trajectory['r'] >= 160) & (trajectory['r'] < 200)]
+        s240 = trajectory[(trajectory['r'] >= 200) & (trajectory['r'] < 240)]
+        s280 = trajectory[(trajectory['r'] >= 240) & (trajectory['r'] < 280)]
 
-        return [s30,s60, s90,s130,s150,s180,s210]
+        return [s40,s80, s120,s160,s200,s240,s280]
 
     def time_binning(space_bin):
-        # Weavers paper temporal binning: 0-5,5-10, 20-35,35-50,50-60    ,65-90,90-125
+        # Weavers paper temporal binning:  0-20, 20-35, 35-50, 50-65, 65-90, 90-125
         t5  = space_bin[(space_bin['t'] >= 0) & (space_bin['t'] < 5)]
         t10 = space_bin[(space_bin['t'] >= 5) & (space_bin['t'] < 10)]
         t15 = space_bin[(space_bin['t'] >= 10) & (space_bin['t'] < 15)]
@@ -58,11 +55,10 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
         t30 = space_bin[(space_bin['t'] >= 25) & (space_bin['t'] < 30 )]
         t40 = space_bin[(space_bin['t'] >= 30) & (space_bin['t'] < 40 )]
         t50 = space_bin[(space_bin['t'] >= 40) & (space_bin['t'] < 50 )]
-        t60 = space_bin[(space_bin['t'] >= 50) & (space_bin['t'] < 61 )]
+        t60 = space_bin[(space_bin['t'] >= 50) & (space_bin['t'] < 60.1 )]
         return [t5,t10,t15,t20,t25,t30,t40,t50,t60]
 
     def Over_lapping_time_binning(space_bin):
-        # Weavers paper temporal binning: 0-5,5-10, 20-35,35-50,50-60    ,65-90,90-125
         t2  = space_bin[(space_bin['t'] >= 0) & (space_bin['t'] < 5)]
         t5 = space_bin[(space_bin['t'] >= 2.5) & (space_bin['t'] < 7.5)]
         t7 = space_bin[(space_bin['t'] >= 5) & (space_bin['t'] < 10)]
@@ -71,8 +67,6 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
         t15 = space_bin[(space_bin['t'] >= 12.5) & (space_bin['t'] < 17.5 )]
         t17 = space_bin[(space_bin['t'] >= 15) & (space_bin['t'] < 20 )]
         t20 = space_bin[(space_bin['t'] >= 17.5) & (space_bin['t'] < 22.5)]
-
-  # Bins for comparison against 15 mins wound = (0-15)(15-30)(30-45)(45-60)(60-75)(75-90)
         return [t2,t5,t7,t10,t12,t15,t17,t20]
 
 
@@ -97,7 +91,7 @@ Bins_neg = spatial_temporal_binning(angle_neg)
 
 # Inference pipeline for BP_Walker 
 source = PointSource(position=np.array([0,0])) # Source is a position at 0,0 due to readjustment of tracks earlier
-NWalkers = 30 # 100 walkers and 1000 iterations seem to give the best convergence of the emcee 
+NWalkers = 30 
 NIters = 1000
 t = 0
 
