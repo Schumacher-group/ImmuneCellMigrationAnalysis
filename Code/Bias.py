@@ -1,4 +1,4 @@
-# Import all the necessary modules needed to run the inference pipeline
+# This script reads in tracking data from csv files, bins it, and calls the bias-persistant random walk inference for each bin
 import sys
 import os
 
