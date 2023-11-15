@@ -3,3 +3,4 @@ Notebooks/.ipynb_checkpoints
 Notebooks/InteractiveNotbooks/.ipynb_checkpoints
 __pycache__
 csvs
+.DS_Store
