@@ -1,4 +1,4 @@
-# This script reads in tracking data from csv files, bins it, and calls the bias-persistant random walk inference for each bin
+# This script reads in tracking data from csv files, bins it, and calls the bias-persistent random walk inference for each bin
 import sys
 import os
 
