@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from inference.walker_inference import BiasedPersistentInferer, prepare_paths, spatial_temporal_binning
-from inference.attractant_inference import AttractantInferer
-from in_silico.sources import PointSource, PointWound
+from in_silico.sources import PointSource
 
 
 def create_dataframe(df, xw, yw,loc):
@@ -75,19 +74,16 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
 
     return time_space_bins
 
-trajectory = pd.read_csv("/Users/danieltudor/Desktop/Wood group/New Images from Luigi/Videos/Half_wound_filtered_spots_all_new")
-trajectory = trajectory.drop(trajectory.columns[0], axis = 1 )
-# Lets split the data by the top half and bottom half: 
-angles = angle_binning(trajectory)
-angle_pos = angles[0]
-angle_neg = angles[1]
-print(angle_pos.head())
-print(angle_neg.head())
+loadpath = "../data/cell_tracks/Half_wound/"
+loadfilename = "Halfwound_filtered_combined"
+savepath = "../data/BP_inference/"
+savefilename = "Halfwound_mcr"
+trajectory = pd.read_csv(loadpath+loadfilename)
+# When we exported the CSV, it exported the index values as the first column so we need to get rid of the extra column
+trajectory = trajectory.drop(trajectory.columns[0], axis = 1 ) 
 
-
-
-Bins_pos = spatial_temporal_binning(angle_pos)
-Bins_neg = spatial_temporal_binning(angle_neg)
+# For half wounds Lets split the data by the top half and bottom half: 
+trajectory_controlhalf, trajectory_mcrhalf = angle_binning(trajectory)
 
 # Inference pipeline for BP_Walker 
 source = PointSource(position=np.array([0,0])) # Source is a position at 0,0 due to readjustment of tracks earlier
@@ -95,7 +91,7 @@ NWalkers = 30
 NIters = 1000
 t = 0
 
-Bins = Bins_neg
+Bins = spatial_temporal_binning(trajectory_mcrhalf)
 
 total_bins = (len(Bins) * len(Bins[0])) # total number of bins to run the inference on 
 
@@ -108,5 +104,4 @@ for i in range(len(Bins)):
                           include_t=False), source) # prepares the data for running the inference 
         inf_out = inferer.ensembleinfer(NWalkers, NIters, Pooling = False) # calls the emcee inferer 
         np.save(
-            '../data/New_data/Half_mcr_data_neg{}{}_bin_change'.format(
-                i, j), inf_out) # Saves to local data file 
+            savepath+savefilename+'_bins{}{}'.format(i, j), inf_out) # Saves to local data file 

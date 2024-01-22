@@ -17,7 +17,7 @@ class Source:
         raise NotImplementedError
 
     def to_microns(self, microns_per_pixel: float):
-        if self.units is 'pixels':
+        if self.units == 'pixels':
             self.position *= microns_per_pixel
             self.units = 'microns'
             self.x, self.y = self.position
@@ -26,7 +26,7 @@ class Source:
         return self
 
     def to_pixels(self, microns_per_pixel: float):
-        if self.units is 'microns':
+        if self.units == 'microns':
             self.position /= microns_per_pixel
             self.units = 'pixels'
             self.x, self.y = self.position
@@ -100,10 +100,7 @@ class MultiPointWound(Wound):
     def concentration(self, params: np.ndarray, r: Union[np.ndarray, Number], t: Union[np.ndarray, Number]):
         """
         Return the concentration of attractant at a distance r from the wound centre at time t.
-        Note that, since a wound with multiple cells inside will not emmit attractant in a
-        cicularly symmetric fashion, this is only an approximation. Really, attractant concentration
-        will vary with angle theta too. The approximation is made by simply taking r as the
-        y-coordinate: C(r) ≈ C(x=0, y=r)
+        Here an approximation is made by simply taking r as the y-coordinate: C(r) ≈ C(x=0, y=r)
 
         Notes:
             * if a single point and single time is passed, a single concentration is returned
