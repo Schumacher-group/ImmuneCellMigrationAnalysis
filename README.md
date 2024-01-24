@@ -6,14 +6,15 @@ This repo started out by trying to reproduce the computational methods in Weaver
 The requirements for this project are Numpy, Pandas, Scipy, Matplotlib, Skimage, tqdm and Jupyter. It has been tested with the following versions:
 
 ```
-Python version:     3.7.3
-Numpy version:      1.16.4
-Matplotlib version: 3.0.3
-Pandas version:     0.24.2
-Skimage version:    0.15.0
-Scipy version:      1.2.1
-tqdm version:       4.32.1
+Python version:     3.8.17
+Numpy version:      1.20.3
+Matplotlib version: 3.3.2
+Pandas version:     0.25.3
+Skimage version:    0.16.2
+Scipy version:      1.3.3
+tqdm version:       4.64.0
 Jupyter version:    4.4.0
+emcee version:    3.1.4
 ```
 
 but *should* work with python 3 and any other set of compatible package versions.
