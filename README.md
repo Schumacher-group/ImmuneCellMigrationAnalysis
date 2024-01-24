@@ -1,3 +1,5 @@
+This is an archival branch to preserve a copy of the fork material as well as development work that didn't make it into publication. If you're not an author or contributor it's probably not worth rummaging around in here.
+
 # Immune Cell Migration Analysis
 
 The repository holds code for analysing cell migration using a biased-persistent random walk as well as attractant dynamics.
