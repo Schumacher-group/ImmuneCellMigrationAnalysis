@@ -1,17 +1,20 @@
 import sys
 import os
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('../'))
 
 import numpy as np
-from utils.angles import angle_between
+import pandas as pd
+from Utilities.angles import angle_between
 from in_silico.walkers import reference_axis
-from utils.distributions import WrappedNormal, Uniform
+from Utilities.distributions import WrappedNormal, Uniform
 from in_silico.sources import Source
-from inference.base_inference import inferer
-from utils.checks import check_valid_prior, check_is_numpy
-from utils.misc import nan_concatenate
+from inference.base_inference import Inferer
+from Utilities.checks import check_valid_prior
+from Utilities.misc import nan_concatenate
 
-def prepare_paths(paths: list, min_t: int=5, include_t=True) -> np.ndarray:
+
+
+def prepare_paths(paths: list, min_t: int = 1, include_t=True) -> np.ndarray:
     """
     This function converts a list of paths, which come in the standard form, (each element is a (t, 3) array
     where column 0 has the frame index, column 1 has the x coordinates and column 2 has the y coordinates) into
@@ -48,7 +51,6 @@ def prepare_paths(paths: list, min_t: int=5, include_t=True) -> np.ndarray:
                     passed to the inference class. (T, 2, N)
     """
 
-
     if len(paths) == 0:
         return np.array([]).reshape(0, 2, 0)
 
@@ -57,7 +59,6 @@ def prepare_paths(paths: list, min_t: int=5, include_t=True) -> np.ndarray:
         paths = [path[:, 1:] for path in paths if path.shape[0] >= min_t]
     else:
         paths = [path for path in paths if path.shape[0] >= min_t]
-
 
     paths_array = np.zeros((max_t, 2, len(paths)))
     paths_array[:] = np.nan
@@ -74,7 +75,7 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
 
     Params:
 
-        paths:     np.array - (T, 2, N) - paths of N walkers walking for T timesteps
+        paths:     np.array - (T, 2, N) - paths of N walkers walking for T time steps
 
     Returns:
 
@@ -83,9 +84,9 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
 
     """
 
-    T, _, N = paths_matrix.shape
+    t, _, n = paths_matrix.shape
 
-    if T <= 1 or N == 0:
+    if t <= 1 or n == 0:
         return np.array([]).reshape(0, 0), np.array([]).reshape(0, 0)
 
     moves = paths_matrix[1:, :, :] - paths_matrix[:-1, :, :]
@@ -96,9 +97,36 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
     return alphas, betas
 
 
-class BiasedPersistentInferer(inferer):
+def spatial_temporal_binning(dataframe: pd.DataFrame):
+    def space_binning(trajectory):
+        s70 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 70)]
+        s140 = trajectory[(trajectory['r'] >= 70) & (trajectory['r'] < 140)]
+        s250 = trajectory[(trajectory['r'] >= 140) & (trajectory['r'] < 250)]
+        s360 = trajectory[(trajectory['r'] >= 250) & (trajectory['r'] < 360)]
+        s500 = trajectory[(trajectory['r'] >= 360) & (trajectory['r'] <= 500)]
+        return [s70, s140, s250, s360, s500]
 
-    def __init__(self, paths: list, sources: list, priors: list=None):
+    def time_binning(space_bin):
+        t8 = space_bin[(space_bin['t'] >= (0*60)) & (space_bin['t'] < (20 * 60))]
+        t23 = space_bin[(space_bin['t'] >= (20*60)) & (space_bin['t'] < (35 * 60))]
+        t38 = space_bin[(space_bin['t'] >= (35 * 60)) & (space_bin['t'] < (50 * 60))]
+        t53 = space_bin[(space_bin['t'] >= (50 * 60)) & (space_bin['t'] < (65 * 60))]
+        t68 = space_bin[(space_bin['t'] >= (65 * 60)) & (space_bin['t'] < (90 * 60))]
+        #t83 = space_bin[(space_bin['t'] >= (75 * 60)) & (space_bin['t'] <= (90 * 60))]
+        #t90 = space_bin[(space_bin['t'] >= (65 * 60)) & (space_bin['t'] <= (90 * 60))]
+        #t125 = space_bin[(space_bin['t'] >= (90 * 60)) & (space_bin['t'] <= (125 * 60))]
+  # Bins for comparison against 15 mins wound = (0-15)(15-30)(30-45)(45-60)(60-75)(75-90)
+        return [t8,t23, t38, t53,t68] #, t83]#, t65, t90]#, t125]
+
+    distance = space_binning(dataframe)
+    time_space_bins = list(map(time_binning, distance))
+
+    return time_space_bins
+
+
+class BiasedPersistentInferer(Inferer):
+
+    def __init__(self, paths: list, sources: list, priors: list = None):
         """
         Initialise an inference pipeline for biased persistent walkers.
         Pass in a set of observed paths, with a corresponding set of
@@ -107,7 +135,7 @@ class BiasedPersistentInferer(inferer):
         Parameters
         ----------
         paths       a list of np.arrays of shape (T+1, 2, N). These are the paths of N
-                    walkers walking for T timesteps. Not every path must be of the same
+                    walkers walking for T time steps. Not every path must be of the same
                     length, but the longest should be T+1. For every other path i, start
                     at index 0 and fill up to length t [:t, :, i] leaving [t:, :, i]
                     filled with np.nan values. Can also be a singe numpy array for one
@@ -145,12 +173,12 @@ class BiasedPersistentInferer(inferer):
         alphas = []
         betas = []
         for path, source in zip(paths, sources):
-            a, b = get_alphas_betas(path, source)
-            if a.shape != (0, 0) and b.shape != (0, 0):
+            a, beta = get_alphas_betas(path, source)
+            if a.shape != (0, 0) and beta.shape != (0, 0):
                 alphas.append(a)
-                betas.append(b)
+                betas.append(beta)
 
-        # concantenate them into two big arrays
+        # concatenate them into two big arrays
         alphas = nan_concatenate(alphas, axis=1)
         betas = nan_concatenate(betas, axis=1)
 
@@ -158,7 +186,7 @@ class BiasedPersistentInferer(inferer):
         self.alpha0 = alphas[0, :]
         self.beta0 = betas[0, :]
 
-        # seperate angles and previous angles
+        # separate angles and previous angles
         self.betas = betas[1:, :]
         self.alphas = alphas[1:, :]
         self.alphas_ = alphas[:-1, :]
@@ -185,7 +213,7 @@ class BiasedPersistentInferer(inferer):
 
             w:         The variable w which defines the probability of taking a biased step
             p:         The variable p, defining the variance of persistent motion
-            b:         The variable b, defining the variance of boased motion
+            b:         The variable b, defining the variance of biased motion
 
         Returns:
 
@@ -196,22 +224,31 @@ class BiasedPersistentInferer(inferer):
         if (params > 1).any() or (params < 0).any():
             return -np.inf
 
-        w, p, b = params
+        weight, p1, bias = params
 
-        sig_b = (-2 * np.log(b)) ** 0.5
-        sig_p = (-2 * np.log(p)) ** 0.5
+        sig_b = (-2 * np.log(bias)) ** 0.5
+        sig_p1 = (-2 * np.log(p1)) ** 0.5
 
         # The probability of observing the first step, given the angle beta0 towards the source
-        p_0 = WrappedNormal(mu=self.beta0, sig=sig_b).pdf(x=self.alpha0)
+        # Updated to address issues with log(0), if the b or p parameter = 0,
+        # the distribution can be assumed to be Uniform.
 
-        # biased probabilities
-        p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
+        if bias > 0:
+            p_0 = WrappedNormal(mu=self.beta0, sig=sig_b).pdf(x=self.alpha0)
+            p_b = WrappedNormal(mu=self.betas, sig=sig_b).pdf(x=self.alphas)
+        else:
+            p_0 = WrappedNormal(mu=self.beta0, sig=100).pdf(x=self.alpha0)
+            p_b = WrappedNormal(mu=self.betas, sig=100).pdf(x=self.alphas)
 
         # persistent probabilities
-        p_p = WrappedNormal(mu=self.alphas_, sig=sig_p).pdf(x=self.alphas)
+        if sig_p1 > 0:
+            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p1).pdf(
+                x=self.alphas)  # + WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
+        else:
+            p_p = WrappedNormal(mu=self.alphas, sig=100).pdf(x=self.alphas)
 
         # combined probabilities
-        p_t = w * p_b + (1 - w) * p_p
+        p_t = weight * p_b + (1 - weight) * p_p
 
         # take logs
         log_p_0 = np.log(p_0)
@@ -232,15 +269,13 @@ class BiasedPersistentInferer(inferer):
 
         Parameters
         ----------
-        params      Numpy array of shape (3,) containing the paramater
-                    values
+        params      Numpy array of shape (3,) containing the parameter values
 
         Returns
         -------
         a float value of the log prior at the params value
 
         """
-
 
         if self.uniform_prior:
 
@@ -254,10 +289,9 @@ class BiasedPersistentInferer(inferer):
 
 
 if __name__ == '__main__':
-
     from in_silico.walkers import BP_Leukocyte
     from in_silico.sources import PointSource
-    from utils.plotting import plot_wpb_dist
+    from Utilities.plotting import plot_wpb_dist
 
     # TEST
 

@@ -1,6 +1,6 @@
 .idea
-Notebooks/.ipynb_checkpoints
-Notebooks/InteractiveNotbooks/.ipynb_checkpoints
+*/.ipynb_checkpoints
 __pycache__
 csvs
 .DS_Store
+*/.DS_Store
