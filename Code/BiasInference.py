@@ -74,10 +74,10 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
 
     return time_space_bins
 
-loadpath = "../data/cell_tracks/Half_wound/"
-loadfilename = "Halfwound_filtered_combined"
+loadpath = "../data/cell_tracks/Single_wound/CTR_revision/"
+loadfilename = "Control_filtered_combined"
 savepath = "../data/BP_inference/"
-savefilename = "Halfwound_mcr"
+savefilename = "Single_wound_CTR_revision"
 trajectory = pd.read_csv(loadpath+loadfilename)
 # When we exported the CSV, it exported the index values as the first column so we need to get rid of the extra column
 trajectory = trajectory.drop(trajectory.columns[0], axis = 1 ) 
