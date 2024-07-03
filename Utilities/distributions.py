@@ -236,8 +236,16 @@ class Uniform(ScipyDistribution):
         super().__init__(dist_type=uniform, loc = a, scale = b)
         self.a = a
         self.b = b
+
     def get_xlims(self):
         return self.a, self.b
+    
+    def logpdf(self, x: Union[float, np.ndarray]):
+        if np.all((x >= self.a) & (x <= self.b)):
+            return 0.0
+        else:
+            return -np.inf
+
 
 class Loguniform(ScipyDistribution):
 
