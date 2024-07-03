@@ -66,7 +66,8 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
         t15 = space_bin[(space_bin['t'] >= 12.5) & (space_bin['t'] < 17.5 )]
         t17 = space_bin[(space_bin['t'] >= 15) & (space_bin['t'] < 20 )]
         t20 = space_bin[(space_bin['t'] >= 17.5) & (space_bin['t'] < 22.5)]
-        return [t2,t5,t7,t10,t12,t15,t17,t20]
+        t22 = space_bin[(space_bin['t'] >= 20.0) & (space_bin['t'] < 25.0)]
+        return [t2,t5,t7,t10,t12,t15,t17,t20,t22]
 
 
     distance = space_binning(dataframe)
@@ -74,10 +75,10 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
 
     return time_space_bins
 
-loadpath = "../data/cell_tracks/Single_wound/MCR_revision/"
-loadfilename = "MCR_filtered_combined"
+loadpath = "../data/cell_tracks/Single_wound/CTR_revision/"
+loadfilename = "Control_filtered_combined"
 savepath = "../data/BP_inference/"
-savefilename = "Single_wound_MCR_revision"
+savefilename = "Single_wound_CTR_revision"
 trajectory = pd.read_csv(loadpath+loadfilename)
 # When we exported the CSV, it exported the index values as the first column so we need to get rid of the extra column
 trajectory = trajectory.drop(trajectory.columns[0], axis = 1 ) 
