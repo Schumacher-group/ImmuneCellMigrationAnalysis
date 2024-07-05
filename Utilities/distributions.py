@@ -8,6 +8,8 @@ import time
 
 import sys
 import os
+
+import scipy.stats
 from Utilities.plotting import add_pi_ticks
 
 sys.path.append(os.path.split(sys.path[0])[0])
@@ -216,10 +218,13 @@ class TruncatedNormal(ScipyDistribution):
         self.sig = sig
         self.mu  = mu
 
-
     def get_xlims(self):
         return 0, 10 * self.sig
-
+    
+    def logpdf(self, x: Union[float, np.ndarray]):
+        a,b = (0-self.mu)/self.sig,(np.inf-self.mu)/self.sig
+        return scipy.stats.truncnorm.logpdf(x, a=a, b=b, loc=self.mu, scale=self.sig)
+    
 
 class Uniform(ScipyDistribution):
 
@@ -233,7 +238,7 @@ class Uniform(ScipyDistribution):
         ----------
         sig    the scale of the normal distribution, which is then truncated.
         """
-        super().__init__(dist_type=uniform, loc = a, scale = b)
+        super().__init__(dist_type=uniform, loc = a, scale = b - a) # From scipy docs: Using the parameters loc and scale, one obtains the uniform distribution on [loc, loc + scale].
         self.a = a
         self.b = b
 
@@ -241,10 +246,7 @@ class Uniform(ScipyDistribution):
         return self.a, self.b
     
     def logpdf(self, x: Union[float, np.ndarray]):
-        if np.all((x >= self.a) & (x <= self.b)):
-            return 0.0
-        else:
-            return -np.inf
+        return scipy.stats.uniform.logpdf(x, loc = self.a, scale = self.b - self.a)
 
 
 class Loguniform(ScipyDistribution):
