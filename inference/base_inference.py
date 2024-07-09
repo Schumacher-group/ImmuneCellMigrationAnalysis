@@ -3,10 +3,10 @@ import numpy as np
 import emcee
 import zeus
 
-from multiprocessing import Pool
+import multiprocessing as  mp
 from tqdm import tqdm
 from Utilities.parallel import parallel_methods
-
+# mp.set_start_method('fork', force=True) # for mp to work on (some) macs
 
 class Inferer:
 
@@ -27,21 +27,20 @@ class Inferer:
         return lp + self.log_likelihood(params)
   
 
-    def ensembleinfer(self, n_walkers: int, niter: int, Pooling: bool):
+    def ensembleinfer(self, n_walkers: int, niter: int, Pooling: bool, savefile=None):
         initial = np.array([prior.sample() for prior in self.priors])
         ndim = len(initial)
         p0 = [np.array(initial) + 1e-4 * np.random.randn(ndim) for i in range(n_walkers)]
-        l_like = self.log_likelihood
-        l_p = self.log_probability
         if Pooling == True:
-            with Pool() as pool:
-                sampler = emcee.EnsembleSampler(n_walkers, ndim, l_p)
-                print("Running sampler: ")
+            # mp.set_start_method('fork', force=True) # for mp to work on (some) macs
+            with mp.Pool() as pool:
+                sampler = emcee.EnsembleSampler(n_walkers, ndim, self.log_probability, pool=pool, backend=savefile)
+                print("Running sampler with pooling: ")
                 pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
                 return sampler, pos, prob, state
     
         else:
-            sampler = emcee.EnsembleSampler(n_walkers, ndim, l_p)
+            sampler = emcee.EnsembleSampler(n_walkers, ndim, self.log_probability, backend=savefile)
             print("Running sampler: ")
             pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
             return sampler, pos, prob, state

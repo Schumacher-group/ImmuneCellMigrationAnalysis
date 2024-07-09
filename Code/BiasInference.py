@@ -83,26 +83,32 @@ trajectory = pd.read_csv(loadpath+loadfilename)
 # When we exported the CSV, it exported the index values as the first column so we need to get rid of the extra column
 trajectory = trajectory.drop(trajectory.columns[0], axis = 1 ) 
 
-# For half wounds Lets split the data by the top half and bottom half: 
-trajectory_controlhalf, trajectory_mcrhalf = angle_binning(trajectory)
+# # For half wounds Lets split the data by the top half and bottom half: 
+# trajectory_controlhalf, trajectory_mcrhalf = angle_binning(trajectory)
 
 # Inference pipeline for BP_Walker 
 source = PointSource(position=np.array([0,0])) # Source is a position at 0,0 due to readjustment of tracks earlier
 NWalkers = 30 
-NIters = 1000
-t = 0
+NIters = 5000
+bin_counter = 0
 
-Bins = spatial_temporal_binning(trajectory_mcrhalf)
+Bins = spatial_temporal_binning(trajectory)
 
 total_bins = (len(Bins) * len(Bins[0])) # total number of bins to run the inference on 
 
+import emcee
+import multiprocessing as mp
+mp.set_start_method('fork', force=True)
+
 for i in range(len(Bins)):
     for j in range(len(Bins[0])):
-        t += 1  # Tracks the number of bins
-        print('analysing bin {}/{}'.format(t,total_bins))  # to give an overall sense of progress
+        bin_counter += 1  # Tracks the number of bins
+        print('analysing bin {}/{}'.format(bin_counter,total_bins))  # to give an overall sense of progress
+        backend = emcee.backends.HDFBackend(savepath+savefilename+'_bins{}{}'.format(i, j)+'.h5')
+        backend.reset(NWalkers, 3)
         inferer = BiasedPersistentInferer(
             prepare_paths([paths[['x', 'y']].values for id, paths in Bins[i][j].groupby('Track_ID')],
                           include_t=False), source) # prepares the data for running the inference 
-        inf_out = inferer.ensembleinfer(NWalkers, NIters, Pooling = False) # calls the emcee inferer 
-        np.save(
-            savepath+savefilename+'_bins{}{}'.format(i, j), inf_out) # Saves to local data file 
+        inf_out = inferer.ensembleinfer(NWalkers, NIters, Pooling = True, savefile=backend) # calls the emcee inferer 
+        # np.save(
+        #     savepath+savefilename+'_bins{}{}'.format(i, j), inf_out) # Saves to local data file 
