@@ -7,9 +7,8 @@ sys.path.append(os.path.abspath('..'))
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from inference.walker_inference import BiasedPersistentInferer, prepare_paths, spatial_temporal_binning
 from inference.attractant_inference import AttractantInferer
-from in_silico.sources import PointSource, PointWound
+from in_silico.sources import PointWound
 #from Utilities.plotting import plot_find_wound_location,plotxy_space_bins,plotxy_time_bins,observed_bias_plotting
 
 

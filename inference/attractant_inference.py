@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath('../'))
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from Utilities.distributions import Uniform, Normal, Loguniform, TruncatedNormal
+from Utilities.distributions import Uniform, Normal, Loguniform, TruncatedNormal 
 from inference.base_inference import Inferer
 from typing import Union
 from Utilities.exceptions import SquareRootError
