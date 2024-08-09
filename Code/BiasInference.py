@@ -91,6 +91,11 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
 
 import emcee
 import multiprocessing as mp
+from Utilities.distributions import Uniform, Normal
+
+# optional, specify priors (if different from Uniform[0,1]), params are w, p, b
+non_default_priors = [Normal(0.675, 0.025), Normal(0.75,0.05), Uniform(0, 1)]
+filesuffix = "_prior_wp"
 
 def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIters, binning_function):
     trajectory = pd.read_csv(os.path.join(loadpath, loadfilename))
@@ -116,11 +121,13 @@ def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIte
                 backend.reset(NWalkers, 3)
                 inferer = BiasedPersistentInferer(
                     prepare_paths([paths[['x', 'y']].values for id, paths in Bins[i][j].groupby('Track_ID')],
-                                  include_t=False), source)
-                inferer.ensembleinfer(NWalkers, NIters, Pooling=True, savefile=backend, moves=emcee.moves.GaussianMove(0.0125))
+                                  include_t=False), source, priors=non_default_priors)
+                inferer.ensembleinfer(NWalkers, NIters, Pooling=True, savefile=backend)
 
 # Control data
-run_inference("../data/cell_tracks/Single_wound/CTR_revision", "Control_filtered_combined.csv", "../data/BP_inference/", "Single_wound_CTR_revision_mhmove", 10, 10000, spatial_temporal_binning)
+run_inference("../data/cell_tracks/Single_wound/CTR_revision", "Control_filtered_combined.csv", 
+              "../data/BP_inference/", "Single_wound_CTR_revision"+filesuffix, 10, 10000, spatial_temporal_binning)
 
 # MCR DATA
-run_inference("../data/cell_tracks/Single_wound/MCR_revision", "MCR_filtered_combined.csv", "../data/BP_inference/", "Single_wound_MCR_revision_mhmove", 10, 10000, spatial_temporal_binning)
+run_inference("../data/cell_tracks/Single_wound/MCR_revision", "MCR_filtered_combined.csv",
+               "../data/BP_inference/", "Single_wound_MCR_revision"+filesuffix, 10, 10000, spatial_temporal_binning)
