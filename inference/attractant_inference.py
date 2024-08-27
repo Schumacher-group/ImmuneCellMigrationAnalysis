@@ -33,10 +33,10 @@ def complexes(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.array
     correct concentration equation
     """
     if model == "production":
-        q, d, tau, r_0, kappa = params[:5]
+        q, D, tau, r_0, kappa = params[:5]
         a = wound.concentration(params, r, t)
     elif model == "delta":
-        m, d, r_0, kappa = params[:4]
+        m, D, r_0, kappa = params[:4]
         a = wound.concentration_delta(params, r, t)
     else:
         return "Incorrect model type chosen, please choose 'delta' or 'production'"
@@ -65,9 +65,9 @@ def observed_bias(params: np.ndarray, r: Union[np.ndarray, float], t: Union[np.a
     This allows the model to choose which production equation is used
     """
     if model == "production":
-        q, d, tau, r_0, kappa, m, b_0 = params
+        q, D, tau, r_0, kappa, m, b_0 = params
     elif model == "delta":
-        m0, d, r_0, kappa, m, b_0 = params
+        m0, D, r_0, kappa, m, b_0 = params
     else:
         return "Incorrect model type chosen, please choose 'delta' or 'production'"
 
@@ -127,7 +127,7 @@ class AttractantInferer(Inferer):
             self.t /= 60
 
         # this is our multivariate Gaussian observed bias distribution
-        self.ob_dists = multivariate_normal(mus, sigs ** 2)
+        self.observedBiasDistributions = multivariate_normal(mus, sigs ** 2)
 
         # these are the default priors
         # the priors use truncated normal distributions to ensure that non-physical values aren't produced
@@ -157,7 +157,7 @@ class AttractantInferer(Inferer):
                            Uniform(0, 50),
                            Uniform(0.0, 0.02)]
         else:
-            raise ValueError('The concentration choice should be either continuous or delta, please re-choose')
+            raise ValueError('The model choice should be either production or delta, please re-choose')
 
     def log_likelihood(self, params: np.ndarray):
         """
@@ -171,7 +171,7 @@ class AttractantInferer(Inferer):
         The log likelihood
         """
         try:
-            return self.ob_dists.logpdf(observed_bias(params, self.r, self.t, self.wound, self.model))
+            return self.observedBiasDistributions.logpdf(observed_bias(params, self.r, self.t, self.wound, self.model))
         except SquareRootError:
             return -np.inf
 

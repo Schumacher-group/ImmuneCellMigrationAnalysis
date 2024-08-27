@@ -29,7 +29,7 @@ def angle_binning(trajectory):
 
         return [theta_pos, theta_neg]
 
-def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
+def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False, e2e_threshold=0):
 
 
     def space_binning(trajectory):
@@ -79,10 +79,30 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, angle = False ):
         t20 = space_bin[(space_bin['t'] >= 17.5) & (space_bin['t'] < 22.5)]
         t22 = space_bin[(space_bin['t'] >= 20.0) & (space_bin['t'] < 25.0)]
         return [t2,t5,t7,t10,t12,t15,t17,t20,t22]
+    
+    def exclude_end_to_end_distances(trajectories, e2e_threshold):
+        # exclude trajectories below a specified end to end distance
+        # make a list of the unique trackIDs
+        track_ids = trajectories.Track_ID.unique()
+        # loop through track_ids and remove the ones with e2e distances below the threshold
+        for track_id in track_ids:
+            # calculate the e2e distance for the track
+            this_trajectory = trajectories[trajectories.Track_ID == track_id]
+            this_e2e_distance = np.linalg.norm(this_trajectory[['x', 'y']].iloc[0] - this_trajectory[['x', 'y']].iloc[-1])
+            if this_e2e_distance < e2e_threshold:
+                # drop track_id from trajectories dataframe
+                trajectories = trajectories[trajectories.Track_ID != track_id]
+        
+        return trajectories
 
+    if e2e_threshold>0:
+        trajectories = exclude_end_to_end_distances(dataframe, e2e_threshold)
+    elif e2e_threshold==0:
+        trajectories = dataframe
 
-    distance = space_binning(dataframe)
-    time_space_bins = list(map(time_binning, distance))
+    distance_bins = space_binning(trajectories)
+    
+    time_space_bins = list(map(time_binning, distance_bins))
 
     return time_space_bins
 
@@ -93,18 +113,19 @@ import emcee
 import multiprocessing as mp
 from Utilities.distributions import Uniform, Normal
 
-# optional, specify priors (if different from Uniform[0,1]), params are w, p, b
-non_default_priors = [Normal(0.675, 0.025), Normal(0.75,0.05), Uniform(0, 1)]
-filesuffix = "_prior_wp"
+# # optional, specify priors (if different from Uniform[0,1]), params are w, p, b
+# non_default_priors = [Normal(0.675, 0.025), Normal(0.75,0.05), Uniform(0, 1)]
 
-def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIters, binning_function):
+filesuffix = "_excluding_e2e_lt30"
+
+def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIters, binning_function, e2e_threshold=0):
     trajectory = pd.read_csv(os.path.join(loadpath, loadfilename))
     trajectory = trajectory.drop(trajectory.columns[0], axis=1)
 
     source = PointSource(position=np.array([0, 0]))
     bin_counter = 0
 
-    Bins = binning_function(trajectory)
+    Bins = binning_function(trajectory, e2e_threshold=e2e_threshold)
     num_total_bins = len(Bins) * len(Bins[0])
 
     mp.set_start_method('fork', force=True)
@@ -121,13 +142,13 @@ def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIte
                 backend.reset(NWalkers, 3)
                 inferer = BiasedPersistentInferer(
                     prepare_paths([paths[['x', 'y']].values for id, paths in Bins[i][j].groupby('Track_ID')],
-                                  include_t=False), source, priors=non_default_priors)
+                                  include_t=False), source)
                 inferer.ensembleinfer(NWalkers, NIters, Pooling=True, savefile=backend)
 
 # Control data
 run_inference("../data/cell_tracks/Single_wound/CTR_revision", "Control_filtered_combined.csv", 
-              "../data/BP_inference/", "Single_wound_CTR_revision"+filesuffix, 10, 10000, spatial_temporal_binning)
+              "../data/BP_inference/", "Single_wound_CTR_revision"+filesuffix, 10, 10000, spatial_temporal_binning, e2e_threshold=30)
 
 # MCR DATA
 run_inference("../data/cell_tracks/Single_wound/MCR_revision", "MCR_filtered_combined.csv",
-               "../data/BP_inference/", "Single_wound_MCR_revision"+filesuffix, 10, 10000, spatial_temporal_binning)
+               "../data/BP_inference/", "Single_wound_MCR_revision"+filesuffix, 10, 10000, spatial_temporal_binning, e2e_threshold=30)

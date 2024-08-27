@@ -162,9 +162,9 @@ class WrappedNormal:
             else:
                 return 1 / (2 * np.pi)
         if self.sig == 0:
-            return 0.0
+            return 0.0 # note: this may result in "RuntimeWarning: divide by zero encountered in log" when "log_p_0 = np.log(p_0)" is evaluated in walker_inference. A way around this would be to replace with a very small number, e.g. 1e-10
 
-        # *blindly* opt for 5 loops either side
+        # *arbitratily* opt for 5 loops either side
 
         # mu =  [ mu1  ,  mu2  ,  mu3  ,  mu4  ]
 
