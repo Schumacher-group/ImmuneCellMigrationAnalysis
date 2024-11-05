@@ -175,7 +175,8 @@ def infer_attractant_parameters_emcee_mp(priors_for_initialisation, log_probabil
         for walker in range(n_walkers):
             plt.plot(samples[:, walker, dim], alpha=0.5)
         plt.ylabel(labels[dim])
-    plt.xlabel("Iteration")
+        plt.xlim(0, len(samples))
+    plt.xlabel("Iteration (thinned by {0})".format(thin))
     plt.tight_layout()
     plt.savefig('../Notebooks/Figures/DiagnosticPlots/traceplot_'+saveFilename+'.pdf')
 
@@ -189,6 +190,8 @@ def infer_attractant_parameters_emcee_mp(priors_for_initialisation, log_probabil
     g.map_lower(sns.kdeplot)
     g.map_diag(sns.kdeplot)
     g.savefig('../Notebooks/Figures/DiagnosticPlots/pairgrid_'+saveFilename+'.pdf')
+    # close figure - so that the next autocorrelation plot doesn't plot in the seaborn plot
+    plt.close()
 
 # Sets the wound location
 wound = PointWound(position=np.array([0, 0]))
@@ -210,9 +213,9 @@ priors_flat = [Uniform(0,3500), # q # Reference: Liepe, Taylor, et al. 2012 have
         Uniform(0, 100), # m 
         TruncatedNormal(0.02, 0.02)] # b0 # Reference: Weavers, Liepe, et al. 2016 Fig. 3E
 
-priors_to_use = priors_WLpost
-filesuffix_tosave = '_WLpriors' + filesuffix_tosave
-
+priors_to_use = priors_flat
+filesuffix_tosave = '_flatpriors' + filesuffix_tosave
+print("starting sampling for " + filesuffix_tosave + "...")
 ### Control condition inference
 
 # this code could be imported instead, by importing the AttractantInferer class and creating an instance from which to run the ensemble_infer, but with that the parallalisation was not as quick
