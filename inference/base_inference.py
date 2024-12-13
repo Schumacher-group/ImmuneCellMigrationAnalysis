@@ -44,6 +44,8 @@ class Inferer:
             pos, prob, state = sampler.run_mcmc(p0, niter, progress=True)
             return sampler, pos, prob, state
         
+    def nutsinfer(self):
+        raise NotImplementedError
 
     # This implements the Metropolis-Hastings Monte Carlo method
     def mhinfer(self, n_steps: int, burn_in: int, seed: int = 0,

@@ -11,6 +11,7 @@ from in_silico.sources import Source
 from inference.base_inference import Inferer
 from Utilities.checks import check_valid_prior
 from Utilities.misc import nan_concatenate
+import pymc
 
 
 
@@ -162,7 +163,7 @@ class BiasedPersistentInferer(Inferer):
         # separate angles and previous angles
         self.betas = betas[1:, :]
         self.alphas = alphas[1:, :]
-        self.alphas_ = alphas[:-1, :]
+        self.alphas_previous = alphas[:-1, :]
 
     def log_likelihood(self, params: np.ndarray) -> float:
         """
@@ -215,7 +216,7 @@ class BiasedPersistentInferer(Inferer):
 
         # persistent probabilities
         if sig_p1 > 0:
-            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p1).pdf(
+            p_p = WrappedNormal(mu=self.alphas_previous, sig=sig_p1).pdf(
                 x=self.alphas)  # + WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
         else:
             p_p = WrappedNormal(mu=self.alphas, sig=100).pdf(x=self.alphas)
@@ -259,6 +260,18 @@ class BiasedPersistentInferer(Inferer):
 
         else:
             return sum([prior.logpdf(param) for prior, param in zip(self.priors, params)])
+        
+    def nutsinfer(self):
+        with pymc.Model() as model:
+            # Model parameters and priors
+            w = pymc.Uniform('w', 0, 1)
+            p = pymc.Uniform('p', 0, 1)
+            b = pymc.Uniform('b', 0, 1)
+            # define observed angle as a mixture of two von mises distribution with concentration kappa
+            theta = pymc.Mixture('theta',w=[w, 1-w], comp_dists=[pymc.VonMises('P_bias', mu=self.betas, kappa=-1/2*np.log(b)), 
+                                                                 pymc.VonMises('P_pers', mu=self.alphas_previous, kappa=-1/2*np.log(p))],
+                                                                    observed=self.alphas)
+        return super().nutsinfer()
 
 
 if __name__ == '__main__':

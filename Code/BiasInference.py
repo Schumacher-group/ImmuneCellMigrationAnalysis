@@ -54,6 +54,31 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, e2e_threshold=0):
         s175 = trajectory[(trajectory['r'] >= 120) & (trajectory['r'] < 175)]
         return [s70,s120,s175]
     
+    def space_binning_twowounds(trajectory):
+        # Weaver's paper spatial binning: 0-70,70-140,140-250,250-360,360-500
+        s57 = trajectory[(np.abs(trajectory['y']) >= 0) & (np.abs(trajectory['y']) <= 57)]
+        s114 = trajectory[(np.abs(trajectory['y']) >= 57) & (np.abs(trajectory['y']) <= 114)]
+        s171 = trajectory[(np.abs(trajectory['y']) >= 114) & (np.abs(trajectory['y']) <= 171)]
+        return [s57,s114,s171]
+    
+    def space_binning_twowounds_5bins(trajectory):
+        # Weaver's paper spatial binning: 0-70,70-140,140-250,250-360,360-500
+        s34 = trajectory[(np.abs(trajectory['y']) >= 0) & (np.abs(trajectory['y']) <= 34)]
+        s68 = trajectory[(np.abs(trajectory['y']) >= 34) & (np.abs(trajectory['y']) <= 68)]
+        s102 = trajectory[(np.abs(trajectory['y']) >= 68) & (np.abs(trajectory['y']) <= 102)]
+        s136 = trajectory[(np.abs(trajectory['y']) >= 102) & (np.abs(trajectory['y']) <= 136)]
+        s170 = trajectory[(np.abs(trajectory['y']) >= 136) & (np.abs(trajectory['y']) <= 170)]
+        return [s34,s68,s102,s136,s170]
+    
+    def space_binning_twowounds_5bins_edge2edge(trajectory):
+        # Weaver's paper spatial binning: 0-70,70-140,140-250,250-360,360-500
+        s55 = trajectory[(np.abs(trajectory['y']) >= 0) & (np.abs(trajectory['y']) <= 55)]
+        s75 = trajectory[(np.abs(trajectory['y']) >= 55) & (np.abs(trajectory['y']) <= 75)]
+        s95 = trajectory[(np.abs(trajectory['y']) >= 75) & (np.abs(trajectory['y']) <= 95)]
+        s115 = trajectory[(np.abs(trajectory['y']) >= 95) & (np.abs(trajectory['y']) <= 115)]
+        s135 = trajectory[(np.abs(trajectory['y']) >= 115) & (np.abs(trajectory['y']) <= 170)]
+        return [s55,s75,s95,s115,s135]
+    
     def space_binning2x(trajectory):
         # Weaver's paper spatial binning: 0-70,70-140,140-250,250-360,360-500
         s70 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 70)]
@@ -123,6 +148,14 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, e2e_threshold=0):
         t20 = space_bin[(space_bin['t'] >= 18) & (space_bin['t'] <= 20)]
         return [t10,t18,t20]
     
+    def time_binning_4bins_twowounds(space_bin):
+        # Weavers paper temporal binning:  0-20, 20-35, 35-50, 50-65, 65-90, 90-125
+        t10  = space_bin[(space_bin['t'] >= 5) & (space_bin['t'] <= 15)]
+        t20 = space_bin[(space_bin['t'] >= 15) & (space_bin['t'] <= 25)]
+        t30 = space_bin[(space_bin['t'] >= 25) & (space_bin['t'] <= 35)]
+        t40 = space_bin[(space_bin['t'] >= 35) & (space_bin['t'] <= 45)]
+        return [t10,t20,t30,t40]
+    
     def time_binning_WeaversFirst2bins(space_bin):
         # Weavers paper temporal binning:  0-20, 20-35, 35-50, 50-65, 65-90, 90-125
         t20  = space_bin[(space_bin['t'] >= 0) & (space_bin['t'] < 20)]
@@ -182,9 +215,9 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, e2e_threshold=0):
     elif e2e_threshold==0:
         trajectories = dataframe
 
-    distance_bins = space_binning_175(trajectories)
+    distance_bins = space_binning_twowounds_5bins(trajectories)
     
-    time_space_bins = list(map(time_binning_2bins_5min, distance_bins))
+    time_space_bins = list(map(time_binning_4bins_twowounds, distance_bins))
 
     return time_space_bins
 
@@ -193,12 +226,9 @@ def spatial_temporal_binning(dataframe: pd.DataFrame, e2e_threshold=0):
 
 import emcee
 import multiprocessing as mp
-from Utilities.distributions import Uniform, Normal
 
-# # optional, specify priors (if different from Uniform[0,1]), params are w, p, b
-# non_default_priors = [Normal(0.675, 0.025), Normal(0.75,0.05), Uniform(0, 1)]
-
-filesuffix = "_s3_t2_5mins"
+filesuffix = "_s5y"
+halfwound_toggle = False
 
 def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIters, binning_function, 
                   e2e_threshold=0, farhalf=False, angle_bin=0, halfwound=False):
@@ -264,27 +294,48 @@ def run_inference(loadpath, loadfilename, savepath, savefilename, NWalkers, NIte
 #                 e2e_threshold=0, farhalf=True)
 
 # halfwound experiments
-# Control data
-run_inference("../data/cell_tracks/Half_wound/CTR_revision", "Halfwound_CTR_filtered_combined.csv", 
-              "../data/BP_inference/", "Halfwound_CTR_revision"+filesuffix, 10, 10000, spatial_temporal_binning,
-              halfwound=False)
+# # Control data
+# run_inference("../data/cell_tracks/Half_wound/CTR_revision", "Halfwound_CTR_filtered_combined.csv", 
+#               "../data/BP_inference/", "Halfwound_CTR_revision"+filesuffix, 10, 10000, spatial_temporal_binning,
+#               halfwound=False)
 
-# MCR DATA - control half
-run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
-               "../data/BP_inference/", "Halfwound_MCR_revision_ctr_half"+filesuffix, 10, 10000, spatial_temporal_binning,
-                halfwound=True, angle_bin=0)
+# # MCR DATA - control half
+# run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
+#                "../data/BP_inference/", "Halfwound_MCR_revision_ctr_half"+filesuffix, 10, 10000, spatial_temporal_binning,
+#                 halfwound=True, angle_bin=0)
 
-# MCR DATA - MCR half
-run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
-               "../data/BP_inference/", "Halfwound_MCR_revision_mcr_half"+filesuffix, 10, 10000, spatial_temporal_binning,
-                halfwound=True, angle_bin=1)
+# # MCR DATA - MCR half
+# run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
+#                "../data/BP_inference/", "Halfwound_MCR_revision_mcr_half"+filesuffix, 10, 10000, spatial_temporal_binning,
+#                 halfwound=True, angle_bin=1)
 
-# MCR DATA - control quarter
-run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
-               "../data/BP_inference/", "Halfwound_MCR_revision_ctr_quarter"+filesuffix, 10, 10000, spatial_temporal_binning,
-                halfwound=True, angle_bin=2)
+# # MCR DATA - control quarter
+# run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
+#                "../data/BP_inference/", "Halfwound_MCR_revision_ctr_quarter"+filesuffix, 10, 10000, spatial_temporal_binning,
+#                 halfwound=True, angle_bin=2)
 
-# MCR DATA - MCR quarter
-run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
-               "../data/BP_inference/", "Halfwound_MCR_revision_mcr_quarter"+filesuffix, 10, 10000, spatial_temporal_binning,
-                halfwound=True, angle_bin=3)
+# # MCR DATA - MCR quarter
+# run_inference("../data/cell_tracks/Half_wound/MCR_revision", "Halfwound_MCR_filtered_combined.csv",
+#                "../data/BP_inference/", "Halfwound_MCR_revision_mcr_quarter"+filesuffix, 10, 10000, spatial_temporal_binning,
+#                 halfwound=True, angle_bin=3)
+
+# halfwound experiments - two wound experiments
+# # Control data - top half
+run_inference("../data/cell_tracks/Two_wound_data/CTR_revision", "Two_wound_Control_top_filtered_combined.csv",
+               "../data/BP_inference/", "Two_wound_CTR_revision_top"+filesuffix, 10, 10000, spatial_temporal_binning,
+               halfwound=halfwound_toggle, angle_bin=3)
+
+# # Control data - bottom half
+run_inference("../data/cell_tracks/Two_wound_data/CTR_revision", "Two_wound_Control_bottom_filtered_combined.csv",
+               "../data/BP_inference/", "Two_wound_CTR_revision_bottom"+filesuffix, 10, 10000, spatial_temporal_binning,
+                halfwound=halfwound_toggle, angle_bin=2)
+
+# # MCR DATA - top half
+run_inference("../data/cell_tracks/Two_wound_data/MCR_revision", "Two_wound_MCR_top_filtered_combined.csv",
+               "../data/BP_inference/", "Two_wound_MCR_revision_top"+filesuffix, 10, 10000, spatial_temporal_binning,
+               halfwound=halfwound_toggle, angle_bin=3)
+
+# # MCR DATA - bottom half
+run_inference("../data/cell_tracks/Two_wound_data/MCR_revision", "Two_wound_MCR_bottom_filtered_combined.csv",
+               "../data/BP_inference/", "Two_wound_MCR_revision_bottom"+filesuffix, 10, 10000, spatial_temporal_binning,
+                halfwound=halfwound_toggle, angle_bin=2)
