@@ -11,6 +11,7 @@ from in_silico.sources import Source
 from inference.base_inference import Inferer
 from Utilities.checks import check_valid_prior
 from Utilities.misc import nan_concatenate
+import pymc
 
 
 
@@ -97,33 +98,6 @@ def get_alphas_betas(paths_matrix: np.ndarray, source: Source):
     return alphas, betas
 
 
-def spatial_temporal_binning(dataframe: pd.DataFrame):
-    def space_binning(trajectory):
-        s70 = trajectory[(trajectory['r'] >= 0) & (trajectory['r'] < 70)]
-        s140 = trajectory[(trajectory['r'] >= 70) & (trajectory['r'] < 140)]
-        s250 = trajectory[(trajectory['r'] >= 140) & (trajectory['r'] < 250)]
-        s360 = trajectory[(trajectory['r'] >= 250) & (trajectory['r'] < 360)]
-        s500 = trajectory[(trajectory['r'] >= 360) & (trajectory['r'] <= 500)]
-        return [s70, s140, s250, s360, s500]
-
-    def time_binning(space_bin):
-        t8 = space_bin[(space_bin['t'] >= (0*60)) & (space_bin['t'] < (20 * 60))]
-        t23 = space_bin[(space_bin['t'] >= (20*60)) & (space_bin['t'] < (35 * 60))]
-        t38 = space_bin[(space_bin['t'] >= (35 * 60)) & (space_bin['t'] < (50 * 60))]
-        t53 = space_bin[(space_bin['t'] >= (50 * 60)) & (space_bin['t'] < (65 * 60))]
-        t68 = space_bin[(space_bin['t'] >= (65 * 60)) & (space_bin['t'] < (90 * 60))]
-        #t83 = space_bin[(space_bin['t'] >= (75 * 60)) & (space_bin['t'] <= (90 * 60))]
-        #t90 = space_bin[(space_bin['t'] >= (65 * 60)) & (space_bin['t'] <= (90 * 60))]
-        #t125 = space_bin[(space_bin['t'] >= (90 * 60)) & (space_bin['t'] <= (125 * 60))]
-  # Bins for comparison against 15 mins wound = (0-15)(15-30)(30-45)(45-60)(60-75)(75-90)
-        return [t8,t23, t38, t53,t68] #, t83]#, t65, t90]#, t125]
-
-    distance = space_binning(dataframe)
-    time_space_bins = list(map(time_binning, distance))
-
-    return time_space_bins
-
-
 class BiasedPersistentInferer(Inferer):
 
     def __init__(self, paths: list, sources: list, priors: list = None):
@@ -189,7 +163,7 @@ class BiasedPersistentInferer(Inferer):
         # separate angles and previous angles
         self.betas = betas[1:, :]
         self.alphas = alphas[1:, :]
-        self.alphas_ = alphas[:-1, :]
+        self.alphas_previous = alphas[:-1, :]
 
     def log_likelihood(self, params: np.ndarray) -> float:
         """
@@ -242,7 +216,7 @@ class BiasedPersistentInferer(Inferer):
 
         # persistent probabilities
         if sig_p1 > 0:
-            p_p = WrappedNormal(mu=self.alphas_, sig=sig_p1).pdf(
+            p_p = WrappedNormal(mu=self.alphas_previous, sig=sig_p1).pdf(
                 x=self.alphas)  # + WrappedNormal(mu=self.alphas_, sig=sig_p2).pdf(x=self.alphas)
         else:
             p_p = WrappedNormal(mu=self.alphas, sig=100).pdf(x=self.alphas)
@@ -286,6 +260,18 @@ class BiasedPersistentInferer(Inferer):
 
         else:
             return sum([prior.logpdf(param) for prior, param in zip(self.priors, params)])
+        
+    def nutsinfer(self):
+        with pymc.Model() as model:
+            # Model parameters and priors
+            w = pymc.Uniform('w', 0, 1)
+            p = pymc.Uniform('p', 0, 1)
+            b = pymc.Uniform('b', 0, 1)
+            # define observed angle as a mixture of two von mises distribution with concentration kappa
+            theta = pymc.Mixture('theta',w=[w, 1-w], comp_dists=[pymc.VonMises('P_bias', mu=self.betas, kappa=-1/2*np.log(b)), 
+                                                                 pymc.VonMises('P_pers', mu=self.alphas_previous, kappa=-1/2*np.log(p))],
+                                                                    observed=self.alphas)
+        return super().nutsinfer()
 
 
 if __name__ == '__main__':

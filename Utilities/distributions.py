@@ -8,6 +8,8 @@ import time
 
 import sys
 import os
+
+import scipy.stats
 from Utilities.plotting import add_pi_ticks
 
 sys.path.append(os.path.split(sys.path[0])[0])
@@ -45,9 +47,9 @@ interval(alpha) Endpoints of the range that contains alpha percent of the distri
  """
 
 
-class ScipyDistribution(scipy.stats._distn_infrastructure.rv_frozen):
+class ScipyDistribution(scipy.stats._distn_infrastructure.rv_continuous_frozen):
     """
-    This is a class that some didstributions can inherit from, which
+    This is a class that some distributions can inherit from, which
     gives access to the scipy functionality. The reason for the
     inheritacne is to give them better names, and add some custom
     functionality where necessary.
@@ -160,9 +162,9 @@ class WrappedNormal:
             else:
                 return 1 / (2 * np.pi)
         if self.sig == 0:
-            return 0.0
+            return 0.0 # note: this may result in "RuntimeWarning: divide by zero encountered in log" when "log_p_0 = np.log(p_0)" is evaluated in walker_inference. A way around this would be to replace with a very small number, e.g. 1e-10
 
-        # *blindly* opt for 5 loops either side
+        # *arbitratily* opt for 5 loops either side
 
         # mu =  [ mu1  ,  mu2  ,  mu3  ,  mu4  ]
 
@@ -216,10 +218,14 @@ class TruncatedNormal(ScipyDistribution):
         self.sig = sig
         self.mu  = mu
 
-
     def get_xlims(self):
         return 0, 10 * self.sig
-
+    
+    # this following definition should now be correctly inherited from the scipy distribution again
+    # def logpdf(self, x: Union[float, np.ndarray]):
+    #     a,b = (0-self.mu)/self.sig,(np.inf-self.mu)/self.sig
+    #     return scipy.stats.truncnorm.logpdf(x, a=a, b=b, loc=self.mu, scale=self.sig)
+    
 
 class Uniform(ScipyDistribution):
 
@@ -233,11 +239,17 @@ class Uniform(ScipyDistribution):
         ----------
         sig    the scale of the normal distribution, which is then truncated.
         """
-        super().__init__(dist_type=uniform, loc = a, scale = b)
+        super().__init__(dist_type=uniform, loc = a, scale = b - a) # From scipy docs: Using the parameters loc and scale, one obtains the uniform distribution on [loc, loc + scale].
         self.a = a
         self.b = b
+
     def get_xlims(self):
         return self.a, self.b
+    
+    # this following definition should now be correctly inherited from the scipy distribution again
+    # def logpdf(self, x: Union[float, np.ndarray]):
+    #     return scipy.stats.uniform.logpdf(x, loc = self.a, scale = self.b - self.a)
+
 
 class Loguniform(ScipyDistribution):
 
@@ -255,351 +267,6 @@ class Loguniform(ScipyDistribution):
         super().__init__(dist_type=loguniform, a = a, b = b)
         self.a = a
         self.b = b
+
     def get_xlims(self):
         return self.a, self.b
-
-
-
-# import numpy as np
-# from typing import Union
-# import matplotlib.pyplot as plt
-# from matplotlib.widgets import Slider, Button
-# import re
-# from scipy.stats import norm
-#
-
-# def set_params(distribution, pi_ticks=False):
-#
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#
-#     if pi_ticks:
-#         add_pi_ticks(ax)
-#
-#     # Adjust the subplots region to leave some space for the sliders and buttons
-#     fig.subplots_adjust(bottom=0.25)
-#     a, b = distribution.get_xlims()
-#     ax.set_xlim(a, b)
-#
-#     distribution.x = np.linspace(a, b, 1001)
-#     distribution.y = distribution.pdf(distribution.x)
-#     [line] = ax.plot(distribution.x, distribution.y)
-#
-#     mu1, mu2 = distribution.get_mean_lims()
-#     sig1, sig2 = distribution.get_sig_lims()
-#
-#
-#     slider_ax1 = fig.add_axes([0.15, 0.1, 0.65, 0.03])
-#     slider_ax2 = fig.add_axes([0.15, 0.15, 0.65, 0.03])
-#     slider1 = Slider(slider_ax1, r'$\mu$', mu1, mu2, valinit=distribution.mu)
-#     slider2 = Slider(slider_ax2, r'$\sigma$', sig1, sig2, valinit=distribution.sig)
-#
-#     def update_y():
-#         distribution.y = distribution.pdf(distribution.x)
-#         line.set_ydata(distribution.y)
-#         fig.canvas.draw_idle()
-#
-#     def slider1_on_changed(val):
-#         distribution.mu = slider1.val
-#         update_y()
-#
-#     def slider2_on_changed(val):
-#         distribution.sig = slider2.val
-#         update_y()
-#
-#     def reset_axis(mouse_event):
-#
-#         max_y = distribution.y.max()
-#         min_y = distribution.y.min()
-#         diff = max_y - min_y
-#         ax.set_ylim(min_y - 0.1 * diff, max_y + 0.1 * diff)
-#         fig.canvas.draw_idle()
-#
-#     slider1.on_changed(slider1_on_changed)
-#     slider2.on_changed(slider2_on_changed)
-#     reset_button_ax = fig.add_axes([0.4, 0.025, 0.15, 0.04])
-#     reset_axis_button = Button(reset_button_ax, 'Rescale axis', hovercolor='0.975')
-#     reset_axis_button.on_clicked(reset_axis)
-#
-#     plt.show()
-# class Distribution:
-#
-#     def __init__(self,
-#                  mu: Union[float, np.ndarray]=None,
-#                  sig: Union[float, np.ndarray]=None):
-#
-#         self.mu = mu
-#         self.sig = sig
-#
-#     def pdf(self, x: Union[float, np.ndarray]):
-#         raise NotImplementedError
-#
-#     def logpdf(self, x: Union[float, np.ndarray]):
-#         raise NotImplementedError
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         raise NotImplementedError
-#
-#     def set_params(self):
-#
-#         fig = plt.figure()
-#         ax = fig.add_subplot(111)
-#         name = ''.join([' ' + w for w in re.findall('[A-Z][^A-Z]*', self.__class__.__name__)])
-#         plt.title('Set parameters for{} distribution'.format(name.lower()))
-#
-#         # Adjust the subplots region to leave some space for the sliders and buttons
-#         fig.subplots_adjust(bottom=0.25)
-#         a, b = self.get_xlims()
-#         self.x = np.linspace(a, b, 1001)
-#         self.y = self.pdf(self.x)
-#         [line] = ax.plot(self.x, self.y)
-#
-#         mu1, mu2 = self.get_mean_lims()
-#         sig1, sig2 = self.get_sig_lims()
-#
-#
-#         slider_ax1 = fig.add_axes([0.15, 0.1, 0.65, 0.03])
-#         slider_ax2 = fig.add_axes([0.15, 0.15, 0.65, 0.03])
-#         slider1 = Slider(slider_ax1, r'$\mu$', mu1, mu2, valinit=self.mu)
-#         slider2 = Slider(slider_ax2, r'$\sigma$', sig1, sig2, valinit=self.sig)
-#
-#         def slider1_on_changed(val):
-#             self.mu = slider1.val
-#             self.y = self.pdf(self.x)
-#             line.set_ydata(self.y)
-#             fig.canvas.draw_idle()
-#
-#         def slider2_on_changed(val):
-#             self.sig = slider2.val
-#             line.set_ydata(self.pdf(self.x))
-#             fig.canvas.draw_idle()
-#
-#         def reset_axis(mouse_event):
-#
-#             max_y = np.max(self.y)
-#             min_y = np.min(self.y)
-#             diff = max_y - min_y
-#             ax.set_ylim([min_y, max_y + 0.1 * diff])
-#
-#
-#         slider1.on_changed(slider1_on_changed)
-#         slider2.on_changed(slider2_on_changed)
-#         reset_button_ax = fig.add_axes([0.4, 0.025, 0.15, 0.04])
-#         reset_axis_button = Button(reset_button_ax, 'Reset axis', hovercolor='0.975')
-#         reset_axis_button.on_clicked(reset_axis)
-#
-#         plt.show()
-#
-#     def get_xlims(self):
-#         raise NotImplementedError
-#
-#     def get_mean_lims(self):
-#         raise NotImplementedError
-#
-#     def get_sig_lims(self):
-#         raise NotImplementedError
-#
-#     def plot(self, N=1001):
-#         a, b,  = self.get_xlims()
-#         x = np.linspace(a, b, N)
-#         plt.plot(x, self.pdf(x))
-#
-#     def cdf(self, x: Union[float, np.ndarray]):
-#         raise NotImplementedError
-#
-#     def ppf(self, x: Union[float, np.ndarray]):
-#         raise NotImplementedError
-#
-#     def pdf_at_prob(self, x: Union[float, np.ndarray]):
-#         raise NotImplementedError
-#
-#
-# class WrappedNormal(Distribution):
-#
-#     def __init__(self,
-#                  mu: Union[float, np.ndarray],
-#                  sig: float):
-#
-#         super().__init__(mu, sig)
-#         self.mean = mu
-#         self.variance = 1 - np.exp(- 0.5 * self.sig ** 2)
-#
-#     def pdf(self, x: Union[float, np.ndarray]):
-#
-#         # if sigma is greater than 6, the difference between it and a uniform distribution is ~1e-8
-#         if self.sig > 4:
-#             if isinstance(x, np.ndarray):
-#                 return np.ones_like(x) / (2 * np.pi)
-#             else:
-#                 return 1 / (2 * np.pi)
-#         if self.sig == 0:
-#             return self.mu
-#
-#         # *blindly* opt for 5 loops either side
-#
-#         # mu =  [ mu1  ,  mu2  ,  mu3  ,  mu4  ]
-#
-#         #          .        .        .        .
-#         #          .        .        .        .
-#         # X =   [a - 2π, b - 2π, c - 2π, d - 2π]
-#         #       [  a   ,   b   ,   c   ,   d   ]
-#         #       [a + 2π, b + 2π, c + 2π, d + 2π]
-#         #       [a + 4π, b + 4π, c + 4π, d + 4π]
-#         #          .        .        .        .
-#         #          .        .        .        .
-#
-#         # then sum normal(X) vertically
-#
-#         X = np.array([x + 2 * np.pi * i for i in range(-4, 5)])
-#         return Normal(self.mu, self.sig).pdf(X).sum(0)
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         """
-#         Return an array of independant draws from a wrapped normal distribution
-#         """
-#         return np.mod(np.random.normal(np.pi + self.mu, self.sig, size), 2 * np.pi) - np.pi
-#
-#     def logpdf(self, x: Union[float, np.ndarray]):
-#         return np.log(self.pdf(x))
-#
-#     def get_xlims(self):
-#         return -np.pi, np.pi
-#
-#     def get_mean_lims(self):
-#         return -np.pi, np.pi
-#
-#     def get_sig_lims(self):
-#         return 0.01, 6
-#
-#
-# class Bernoulli(Distribution):
-#
-#     def __init__(self, mu: float):
-#         super().__init__(mu=mu)
-#         self.mean = mu
-#         self.variance = mu * (1 - mu)
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         return np.random.uniform(0, 1, size) < self.mu
-#
-#
-# class TruncatedNormal(Distribution):
-#
-#     def __init__(self,
-#                  sig: Union[float, np.ndarray]):
-#         super().__init__(mu=0, sig=sig)
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         return np.abs(np.random.normal(0, self.sig, size)) + self.mu
-#
-#     def pdf(self, x: Union[float, np.ndarray]):
-#         out = (1 / (self.sig * (2 * np.pi) ** 0.5)) * np.exp(- (x - self.mu) ** 2 / (2 * self.sig ** 2))
-#         out[x < self.mu] = 0
-#         return 2 * out
-#
-#     def logpdf(self, x: Union[float, np.ndarray]):
-#         out = - (x - self.mu) ** 2 / (2 * self.sig ** 2) - np.log(self.sig * (2 * np.pi) ** 0.5) + np.log(2)
-#         out[x < self.mu] = -np.inf
-#         return out
-#
-#     def get_xlims(self):
-#         return self.mu, 5 * self.sig
-#
-#     def pdf_at_prob(self, x: Union[float, np.ndarray]):
-#         return 2 * norm(0, self.sig).pdf(norm(0, self.sig).ppf(x / 2))
-#
-#
-# class Normal(Distribution):
-#
-#     def __init__(self,
-#                  mu: Union[float, np.ndarray],
-#                  sig: Union[float, np.ndarray]):
-#         super().__init__(mu=mu, sig=sig)
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         return np.random.normal(self.mu, self.sig, size)
-#
-#     def pdf(self, x: Union[float, np.ndarray]):
-#         return (1 / (self.sig * (2 * np.pi) ** 0.5)) * np.exp(- (x - self.mu) ** 2 / (2 * self.sig ** 2))
-#
-#     def logpdf(self, x: Union[float, np.ndarray]):
-#         return - (x - self.mu) ** 2 / (2 * self.sig ** 2) - np.log(self.sig * (2 * np.pi) ** 0.5)
-#
-#     def get_xlims(self):
-#         return self.mu - 5 * self.sig, self.mu + 5 * self.sig
-#
-#     def get_mean_lims(self):
-#
-#         if self.mu != 0:
-#             return - 5 * self.mu, 5 * self.mu
-#         else:
-#             return -5, 5
-#
-#     def get_sig_lims(self):
-#         return 0.01 * self.sig, 10 * self.sig
-#
-#
-# class LogNormal(Distribution):
-#
-#     def __init__(self,
-#                  mu: Union[float, np.ndarray],
-#                  sig: Union[float, np.ndarray]):
-#         super().__init__(mu=mu, sig=sig)
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         return np.random.lognormal(self.mu, self.sig, size)
-#
-#     def pdf(self, x: Union[float, np.ndarray]):
-#         return (1 / (x * self.sig * (2 * np.pi) ** 0.5)) * np.exp(- (np.log(x) - self.mu) ** 2 / (2 * self.sig ** 2))
-#
-#     def logpdf(self, x: Union[float, np.ndarray]):
-#         return - np.log(x * self.sig * (2 * np.pi) ** 0.5) - (np.log(x) - self.mu) ** 2 / (2 * self.sig ** 2)
-#
-#     def get_xlims(self):
-#         return np.exp(self.mu - 5 * self.sig), np.exp(self.mu + 5 * self.sig)
-#
-#     def get_mean_lims(self):
-#         return -5, 5
-#
-#     def get_sig_lims(self):
-#         return 0.01, 10
-#
-#
-# class Exponential(Distribution):
-#
-#     def __init__(self,
-#                  mu: Union[float, np.ndarray]):
-#         super().__init__(mu=mu)
-#         self.lamda = 1 / mu
-#         self.log_lamda = np.log(self.lamda)
-#         self.sig = mu
-#
-#     def sample(self, size: Union[tuple, float]=None):
-#         return np.random.lognormal(self.mu, self.sig, size)
-#
-#     def pdf(self, x: Union[float, np.ndarray]):
-#         if isinstance(x, np.ndarray):
-#             out = np.exp(-x / self.mu) / self.mu
-#             out[x == 0] = 0
-#             return out
-#         if x < 0:
-#             return 0
-#         return np.exp(-x / self.mu) / self.mu
-#
-#     def logpdf(self, x: Union[float, np.ndarray]):
-#         if isinstance(x, np.ndarray):
-#             out = self.log_lamda - x * self.lamda
-#             out[x == 0] = -np.inf
-#             return out
-#         if x < 0:
-#             return -np.inf
-#         return self.log_lamda - x * self.lamda
-#
-#     def get_xlims(self):
-#         return 0, 5 * self.mu
-#
-#     def get_mean_lims(self):
-#         return 0, 10
-#
-#     def get_sig_lims(self):
-#         return 0.01, 10
